@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts: M PLUS 1 (SemiBold 600) -->
+    <!-- Google Fonts: BIZ UDPGothic (Bold 700) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&display=swap" rel="stylesheet">
 
     <!-- タイトルを最大震度3以上に更新 -->
     <title>最大震度3以上の地震トラッカー</title>
@@ -31,11 +31,11 @@
         .shindo-3 { background-color: #2563eb; color: white; } /* 震度3のバッジカラー */
         
         .shindo-badge {
-            font-family: 'M PLUS 1', sans-serif;
+            font-family: 'BIZ UDPGothic', sans-serif;
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
-            font-weight: 600;
+            font-weight: 700;
             min-width: 8rem; /* 「震度6弱」が収まる幅に統一 */
             text-align: center;
         }
@@ -1205,15 +1205,15 @@
             
             // タイプに応じたスタイル適用
             if(view.type === 'summary') {
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+                line1.classList.add('text-4xl', 'font-bold', 'text-white');
                 line1.classList.remove('truncate');
                 line2.classList.remove('hidden');
                 line2.textContent = view.line2;
             } else if (view.type === 'shindo') {
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+                line1.classList.add('text-4xl', 'font-bold', 'text-white');
                 line1.classList.remove('truncate');
             } else if (view.type === 'system') {
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white', 'pl-36');
+                line1.classList.add('text-4xl', 'font-bold', 'text-white', 'pl-36');
             }
         };
 
