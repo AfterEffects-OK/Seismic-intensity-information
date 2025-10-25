@@ -311,12 +311,10 @@
                     </select>
                 </div>
 
-                <!-- 表示リセットボタン -->
-                <div id="reset-controls" style="display: none;">
-                    <button id="reset-display-button" class="text-white hover:text-red-400 transition p-1 rounded-full bg-gray-700 hover:bg-red-900/50 w-full text-sm">
-                        表示リセット
-                    </button>
-                </div>
+                <!-- 表示リセットボタンをトランジション設定の隣に移動 -->
+                <button id="reset-display-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg shadow transition duration-150 text-sm" style="display: none;">
+                    リセット
+                </button>
             </div>
 
             <!-- 右: コンテンツ表示エリア（グリーンバック） -->
@@ -979,12 +977,12 @@
 
             if (FIXED_BAR_VIEWS.length > 1) {
                 autoplayControls.style.display = 'flex';
-                document.getElementById('reset-controls').style.display = 'block';
+                document.getElementById('reset-display-button').style.display = 'block';
                 document.getElementById('transition-controls').style.display = 'flex';
                 shindoNav.style.display = 'flex';
             } else {
                 autoplayControls.style.display = 'none';
-                document.getElementById('reset-controls').style.display = 'none';
+                document.getElementById('reset-display-button').style.display = 'none';
                 document.getElementById('transition-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
             }
@@ -1005,7 +1003,7 @@
             const shindoNav = document.getElementById('shindo-nav');
             const autoplayControls = document.getElementById('autoplay-controls');
             const transitionControls = document.getElementById('transition-controls');
-            const resetControls = document.getElementById('reset-controls');
+            const resetButton = document.getElementById('reset-display-button');
 
             // 変更: テキストとバッジを非表示にする
             line1.textContent = '';
@@ -1014,7 +1012,7 @@
             shindoNav.style.display = 'none';
             autoplayControls.style.display = 'none';
             transitionControls.style.display = 'none';
-            resetControls.style.display = 'none';
+            resetButton.style.display = 'none';
         }
 
         /**
