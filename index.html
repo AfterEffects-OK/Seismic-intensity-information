@@ -1073,6 +1073,7 @@
             const pauseIcon = document.getElementById('pause-icon');
             const toggleSwitch = document.getElementById('toggle-mode');
             const refreshButton = document.getElementById('refresh-button');
+            const earthquakeList = document.getElementById('earthquake-list');
             const toggleLabel = toggleSwitch.closest('label');
             const duration = (parseInt(durationInput.value, 10) || 10) * 1000;
             const totalLoops = loopsSelect.value === 'Infinity' ? Infinity : parseInt(loopsSelect.value, 10);
@@ -1084,6 +1085,7 @@
             toggleSwitch.disabled = true;
             refreshButton.disabled = true;
             toggleLabel.classList.add('opacity-50', 'cursor-not-allowed');
+            earthquakeList.classList.add('opacity-50', 'pointer-events-none');
             refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
 
             playIcon.classList.add('hidden');
@@ -1157,6 +1159,7 @@
             const pauseIcon = document.getElementById('pause-icon');
             const toggleSwitch = document.getElementById('toggle-mode');
             const refreshButton = document.getElementById('refresh-button');
+            const earthquakeList = document.getElementById('earthquake-list');
             const toggleLabel = toggleSwitch.closest('label');
 
             clearInterval(autoplayIntervalId);
@@ -1169,6 +1172,7 @@
             toggleSwitch.disabled = false;
             refreshButton.disabled = false;
             toggleLabel.classList.remove('opacity-50', 'cursor-not-allowed');
+            earthquakeList.classList.remove('opacity-50', 'pointer-events-none');
             refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
 
             if (skipRedraw) return;
