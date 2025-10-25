@@ -1073,6 +1073,7 @@
             const pauseIcon = document.getElementById('pause-icon');
             const toggleSwitch = document.getElementById('toggle-mode');
             const refreshButton = document.getElementById('refresh-button');
+            const toggleLabel = toggleSwitch.closest('label');
             const duration = (parseInt(durationInput.value, 10) || 10) * 1000;
             const totalLoops = loopsSelect.value === 'Infinity' ? Infinity : parseInt(loopsSelect.value, 10);
 
@@ -1082,6 +1083,8 @@
             // コントロールをロック
             toggleSwitch.disabled = true;
             refreshButton.disabled = true;
+            toggleLabel.classList.add('opacity-50', 'cursor-not-allowed');
+            refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
 
             playIcon.classList.add('hidden');
             pauseIcon.classList.remove('hidden');
@@ -1154,6 +1157,7 @@
             const pauseIcon = document.getElementById('pause-icon');
             const toggleSwitch = document.getElementById('toggle-mode');
             const refreshButton = document.getElementById('refresh-button');
+            const toggleLabel = toggleSwitch.closest('label');
 
             clearInterval(autoplayIntervalId);
             autoplayIntervalId = null;
@@ -1164,6 +1168,8 @@
             // コントロールのロックを解除
             toggleSwitch.disabled = false;
             refreshButton.disabled = false;
+            toggleLabel.classList.remove('opacity-50', 'cursor-not-allowed');
+            refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
 
             if (skipRedraw) return;
 
