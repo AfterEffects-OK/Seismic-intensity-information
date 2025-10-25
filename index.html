@@ -1088,15 +1088,6 @@
             const nextButton = document.getElementById('shindo-next');
             const pageInfo = document.getElementById('shindo-page-info');
 
-            // 震度ラベルを更新
-            if (currentView.type === 'system') {
-                currentShindoLabel.classList.add('hidden');
-            } else {
-                currentShindoLabel.classList.remove('hidden');
-                currentShindoLabel.textContent = currentView.shindo;
-                currentShindoLabel.className = 'shindo-badge text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5';
-            }
-
             // ナビゲーションボタンの状態を更新
             prevButton.disabled = CURRENT_SHINDO_INDEX === 0;
             nextButton.disabled = CURRENT_SHINDO_INDEX === FIXED_BAR_VIEWS.length - 1;
