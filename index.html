@@ -882,10 +882,22 @@
 
             // --- 1. 概要ページの生成 (動的ページ分割) ---
             const timePart = eq.time.split(' ')[1];
-            const summaryTexts = [
-                `${timePart}に${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`,
-                '各地の震度は次の通りです'
-            ];
+            const summaryTexts = [];
+
+            // 1. 地震発生情報
+            summaryTexts.push(`${timePart}に${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`);
+
+            // 2. 津波情報 (利用可能な場合)
+            if (eq.tsunami && eq.tsunami !== 'Unknown') {
+                const tsunamiMessage = 
+                    eq.tsunami === 'None' ? 'この地震による津波の心配はありません' :
+                    eq.tsunami === 'Warning' ? '津波警報等（大津波警報・津波警報あるいは津波注意報）を発表中です' :
+                    eq.tsunami === 'Checking' ? 'ただいま津波の有無を調査中です' : '';
+                if (tsunamiMessage) summaryTexts.push(tsunamiMessage);
+            }
+
+            // 3. 震度情報への案内
+            summaryTexts.push('各地の震度は次の通りです');
 
             summaryTexts.forEach(text => {
                 if (!doesTextFitInTwoLines(text, contentLine1)) {
