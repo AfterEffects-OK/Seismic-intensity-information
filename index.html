@@ -882,14 +882,17 @@
             CURRENT_SHINDO_INDEX = 0; 
 
             if (FIXED_BAR_VIEWS.length > 1) {
+                document.getElementById('autoplay-controls').style.display = 'flex';
                 shindoNav.style.display = 'flex';
                 updateFixedBarDisplay(); // 初回表示 (概要ビュー)
             } else if (FIXED_BAR_VIEWS.length === 1 && FIXED_BAR_VIEWS[0].type === 'summary') {
                 // 概要ビューのみ（震度3以上の観測地点がない場合）
+                document.getElementById('autoplay-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
                 updateFixedBarDisplay();
             } else {
                  // データはあるが、震度3以上の観測地点がない場合の特別処理
+                document.getElementById('autoplay-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
                 displayFixedBarNoShindoData();
             }
