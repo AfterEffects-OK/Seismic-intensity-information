@@ -558,7 +558,9 @@
                 id: String(earthquake.issue.eventid), 
                 time: formatDateTime(earthquake.issue.time),
                 epicenter: earthquake.earthquake.hypocenter.name || '不明',
+                depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
                 magnitude: earthquake.earthquake.magnitude || '不明',
+                tsunami: earthquake.earthquake.domesticTsunami, // 津波の有無を追加
                 maxShindoLabel: scaleToShindo(earthquake.earthquake.maxScale).label,
                 maxShindoClass: scaleToShindo(earthquake.earthquake.maxScale).class,
                 maxScale: earthquake.earthquake.maxScale, // 最大震度を数値で保持
@@ -702,9 +704,21 @@
                 <h3 class="text-2xl font-bold text-white mb-2">${eq.epicenter}</h3>
                 <!-- ダークモード対応: text-gray-600 -> text-gray-300, border-b -> border-b border-gray-700 -->
                 <div class="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm text-gray-300 border-b border-gray-700 pb-4">
-                    <p><strong>最大震度:</strong> <span class="shindo-badge ${eq.maxShindoClass} text-xs">${eq.maxShindoLabel}</span></p>
                     <p><strong>発生日時:</strong> ${eq.time}</p>
                     <p><strong>マグニチュード:</strong> M${eq.magnitude}</p>
+                    <p><strong>震源の深さ:</strong> ${eq.depth >= 0 ? `約${eq.depth}km` : '不明'}</p>
+                    <p><strong>津波の有無:</strong> 
+                        ${
+                            eq.tsunami === 'None' ? 'この地震による津波の心配はありません。' :
+                            eq.tsunami === 'Warning' ? '<span class="font-bold text-yellow-400">津波警報等（大津波警報・津波警報あるいは津波注意報）を発表中です。</span>' :
+                            eq.tsunami === 'Checking' ? '津波の有無を調査中です。' :
+                            '不明'
+                        }
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    <p class="text-lg"><strong>最大震度:</strong> <span class="shindo-badge ${eq.maxShindoClass} text-base ml-2">${eq.maxShindoLabel}</span></p>
                 </div>
 
                 <!-- ダークモード対応: text-gray-700 -> text-gray-200 -->
