@@ -1204,7 +1204,6 @@
                     const eqData = PROCESSED_EARTHQUAKES.find(eq => eq.id === eventId);
                     if (eqData) {
                         displayEarthquakeDetails(eqData);
-                        pauseAutoplay(); // 新しい地震を選択したら自動送りを停止
                     }
                 }
             };
