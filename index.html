@@ -908,10 +908,10 @@
             const shindoNav = document.getElementById('shindo-nav');
             const autoplayControls = document.getElementById('autoplay-controls');
 
-            line1.textContent = '地震を選択してください。';
+            // 変更: テキストとバッジを非表示にする
+            line1.textContent = '';
             line2.textContent = '';
-            currentShindoLabel.textContent = '選択なし';
-            currentShindoLabel.className = 'shindo-badge text-sm h-7 flex items-center bg-gray-600 text-white';
+            currentShindoLabel.classList.add('hidden');
             shindoNav.style.display = 'none';
             autoplayControls.style.display = 'none';
         }
