@@ -995,7 +995,7 @@
             // 1. 地震発生情報
             summaryTexts.push(`${timePart}に${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`);
 
-            // 1.5. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
+            // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
                 const depthText = eq.depth >= 0 ? `およそ${eq.depth}km　` : '不明';
                 const magnitudeText = `地震の規模（マグニチュード）は${eq.magnitude}です`;
@@ -1025,7 +1025,7 @@
                 }
             });
 
-            // 2. 津波情報 (利用可能な場合) - 概要ページが生成された後に挿入
+            // 3. 津波情報 (利用可能な場合) - 概要ページが生成された後に挿入
             if (eq.tsunamiLabel) {
                 let tsunamiMessage = '';
                 switch (eq.tsunamiLabel) {
@@ -1054,7 +1054,11 @@
                 }
             }
 
-            // --- 2. 震度別地域ページの生成 (動的ページ分割) ---
+            // --- 4. 「各地の震度は〜」ページの生成 ---
+            const finalTextView = { type: 'summary', shindo: '概要', line1: '各地の震度は次の通りです', line2: '', shindoClass: 'bg-gray-500 text-white' };
+            FIXED_BAR_VIEWS.push(finalTextView);
+
+            // --- 5. 震度別地域ページの生成 (動的ページ分割) ---
             shindoGroups.forEach(group => {
                 const cities = group.cities;
                 let pageCities = [];
@@ -1080,18 +1084,14 @@
                 }
             });
 
-            // 3. 震度別リストの前に「各地の震度は〜」を追加
-            const finalTextView = { type: 'summary', shindo: '概要', line1: '各地の震度は次の通りです', line2: '', shindoClass: 'bg-gray-500 text-white' };
-            FIXED_BAR_VIEWS.push(finalTextView);
-
-            // --- 3. 全てのビューにページ番号を付与 ---
+            // --- 6. 全てのビューにページ番号を付与 ---
             const totalViews = FIXED_BAR_VIEWS.length;
             FIXED_BAR_VIEWS.forEach((view, index) => {
                 view.pageCurrent = index + 1;
                 view.pageTotal = totalViews;
             });
 
-            // --- 4. 表示を更新 ---
+            // --- 7. 表示を更新 ---
             CURRENT_SHINDO_INDEX = 0; 
 
             // 地震を選択したら、コントロールボタンを表示し、表示エリアをクリアする
