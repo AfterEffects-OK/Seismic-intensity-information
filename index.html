@@ -126,6 +126,7 @@
         /* 右側のコンテンツエリア（バッジ＋テキスト）のラッパー */
         #content-wrapper {
             background-color: #00ff00; /* クロマキーグリーン */
+            overflow: hidden; /* スライドするコンテンツをはみ出させない */
             display: flex;
             align-items: center;
         }
@@ -313,13 +314,16 @@
 
             <!-- 右: コンテンツ表示エリア（グリーンバック） -->
             <div id="content-wrapper" class="flex-grow min-w-0 h-full ml-1.5">
-                <!-- 震度バッジをこちらに移動 -->
-                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5">選択なし</span>
-                
-                <!-- テキスト表示エリア -->
-                <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-2">
-                    <div id="content-line-1" class="text-sm font-medium text-gray-300 truncate text-edge">地震を選択してください。</div>
-                    <div id="content-line-2" class="text-xs text-gray-400 hidden"></div>
+                <!-- アニメーション用のインナーラッパーを追加 -->
+                <div id="animation-wrapper" class="flex items-center w-full h-full">
+                    <!-- 震度バッジをこちらに移動 -->
+                    <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5">選択なし</span>
+                    
+                    <!-- テキスト表示エリア -->
+                    <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-2">
+                        <div id="content-line-1" class="text-sm font-medium text-gray-300 truncate text-edge">地震を選択してください。</div>
+                        <div id="content-line-2" class="text-xs text-gray-400 hidden"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -991,7 +995,7 @@
         const updateFixedBarDisplay = (overrideView = null, direction = 'none') => {
             const line1 = document.getElementById('content-line-1');
             const line2 = document.getElementById('content-line-2');
-            const currentShindoLabel = document.getElementById('current-shindo-label');
+            const animationWrapper = document.getElementById('animation-wrapper');
             const contentWrapper = document.getElementById('content-wrapper');
             const prevButton = document.getElementById('shindo-prev');
             const nextButton = document.getElementById('shindo-next');
@@ -1009,17 +1013,17 @@
                 const inClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
 
                 // 1. 現在のコンテンツをスライドアウト
-                contentWrapper.classList.add(outClass);
+                animationWrapper.classList.add(outClass);
 
                 // 2. アニメーション終了後にコンテンツを更新してスライドイン
                 setTimeout(() => {
                     renderContent(currentView);
-                    contentWrapper.classList.remove(outClass);
-                    contentWrapper.classList.add(inClass);
+                    animationWrapper.classList.remove(outClass);
+                    animationWrapper.classList.add(inClass);
 
                     // 3. スライドインアニメーション終了後にクラスを削除
                     setTimeout(() => {
-                        contentWrapper.classList.remove(inClass);
+                        animationWrapper.classList.remove(inClass);
                     }, 250);
 
                 }, 250);
@@ -1275,7 +1279,7 @@
             earthquakeList.classList.remove('opacity-50', 'pointer-events-none');
             refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
             // アニメーションクラスが残っている場合があるので削除
-            document.getElementById('content-wrapper').className = 'flex-grow min-w-0 h-full ml-1.5';
+            document.getElementById('animation-wrapper').className = 'flex items-center w-full h-full';
 
             if (skipRedraw) return;
 
