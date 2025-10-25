@@ -392,7 +392,7 @@
 
         const CONFIG = {
             // P2P地震情報 API v2のエンドポイント (地震情報コード551は「震源・震度情報」)
-            API_URL: 'https://api.p2pquake.net/v2/history?codes=551,552&limit=100',
+            API_URL: 'https://api.p2pquake.net/v2/history?limit=100',
             
             // 地震一覧に表示する地震の「最大」震度の最低ライン (30: 震度3)
             MIN_LIST_SCALE: 30,
@@ -547,12 +547,26 @@
             errorElement.classList.add('hidden');
             
             try {
-                const response = await fetch(CONFIG.API_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTPエラー: ${response.status}`);
+                // 震度情報(551)と津波情報(552)を別々にリクエスト
+                const url551 = `${CONFIG.API_URL}&codes=551`;
+                const url552 = `${CONFIG.API_URL}&codes=552`;
+
+                const [response551, response552] = await Promise.all([
+                    fetch(url551),
+                    fetch(url552)
+                ]);
+
+                if (!response551.ok) {
+                    throw new Error(`HTTPエラー (震度情報): ${response551.status}`);
                 }
-                const data = await response.json();
+                if (!response552.ok) {
+                    throw new Error(`HTTPエラー (津波情報): ${response552.status}`);
+                }
                 
+                const data551 = await response551.json();
+                const data552 = await response552.json();
+                const data = [...data551, ...data552];
+
                 // --- 1. 津波情報(552)を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
                 const tsunamiDetailsMap = new Map();
                 const tsunamiInfos = data.filter(d => d.code === 552);
