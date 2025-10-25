@@ -943,17 +943,19 @@
             const nextButton = document.getElementById('shindo-next');
             const pageInfo = document.getElementById('shindo-page-info');
             
-            if (FIXED_BAR_VIEWS.length === 0) return;
+            if (FIXED_BAR_VIEWS.length === 0 && !overrideView) return;
 
             const currentView = overrideView || FIXED_BAR_VIEWS[CURRENT_SHINDO_INDEX];
 
             // 震度ラベルを更新
-            currentShindoLabel.textContent = currentView.shindo;
-            
-            // classList.add() の代わりにスプレッド構文でクラス文字列を展開して渡す
-            currentShindoLabel.className = 'shindo-badge text-sm h-7 flex items-center';
-            const shindoClass = currentView.shindoClass;
-            currentShindoLabel.classList.add(...shindoClass.split(' '));
+            if (currentView.type === 'system') {
+                currentShindoLabel.classList.add('hidden');
+            } else {
+                currentShindoLabel.classList.remove('hidden');
+                currentShindoLabel.textContent = currentView.shindo;
+                currentShindoLabel.className = 'shindo-badge text-sm h-7 flex items-center flex-shrink-0';
+                currentShindoLabel.classList.add(...currentView.shindoClass.split(' '));
+            }
             
             // コンテンツ行を更新 (line1はHTMLを含む場合があるため innerHTMLを使用)
             line1.innerHTML = currentView.line1; // line1に全コンテンツを設定
@@ -1075,17 +1077,18 @@
             // 3. メインのページ送りを開始
             const runAutoplay = () => {
                 updateFixedBarDisplay(); // 現在のインデックスのページを表示
-
+    
                 autoplayIntervalId = setInterval(() => {
                     if (!isAutoplaying) return;
-
-                    if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
-                        CURRENT_SHINDO_INDEX++;
-                    } else {
-                        // 最終ページに到達
+    
+                    // 最終ページに到達しているかチェック
+                    if (CURRENT_SHINDO_INDEX >= FIXED_BAR_VIEWS.length - 1) {
+                        // ループカウンターを増やす
                         autoplayLoopCounter++;
+                        // 指定ループ回数に達したかチェック
                         if (totalLoops !== Infinity && autoplayLoopCounter >= totalLoops) {
-                            // ループ終了
+                            // ループ終了処理
+                            clearInterval(autoplayIntervalId); // タイマーを停止
                             const endView = {
                                 type: 'system', shindo: '情報', line1: '地震情報　おわり', line2: '',
                                 shindoClass: 'bg-blue-600 text-white', pageCurrent: '■', pageTotal: ''
@@ -1094,7 +1097,14 @@
                             pauseAutoplay();
                             return;
                         }
-                        CURRENT_SHINDO_INDEX = 0; // 次のループの開始に戻る
+                        // 次のループの開始に戻る
+                        CURRENT_SHINDO_INDEX = 0;
+                    } else {
+                        // 次のページへ
+                        CURRENT_SHINDO_INDEX++;
+                    }
+    
+                    if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
                     }
                     updateFixedBarDisplay();
                 }, duration);
