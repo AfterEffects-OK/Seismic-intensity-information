@@ -1107,9 +1107,11 @@
 
                             // 指定秒数後に表示をクリアする
                             setTimeout(() => {
-                                // 表示エリアのみをクリアし、ナビゲーションは表示したままにする
-                                document.getElementById('content-line-1').textContent = '';
-                                document.getElementById('current-shindo-label').classList.add('hidden');
+                                if (isAutoplaying) {
+                                    // 表示エリアのみをクリアし、ナビゲーションは表示したままにする
+                                    document.getElementById('content-line-1').textContent = '';
+                                    document.getElementById('current-shindo-label').classList.add('hidden');
+                                }
                                 pauseAutoplay(true); // 完全に停止状態に戻す (再描画なし)
                             }, duration);
                             return;
