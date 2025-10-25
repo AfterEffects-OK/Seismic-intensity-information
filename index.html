@@ -241,7 +241,7 @@
                         <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z"></path></svg>
                     </button>
                     <div class="flex items-center space-x-1">
-                        <input type="number" id="autoplay-duration" value="3" min="1" class="autoplay-input w-12 text-center text-sm p-1">
+                        <input type="number" id="autoplay-duration" value="10" min="1" class="autoplay-input w-12 text-center text-sm p-1">
                         <span class="text-xs text-gray-400">秒</span>
                     </div>
                     <div class="flex items-center space-x-1">
@@ -935,7 +935,7 @@
         /**
          * 固定フッター内の震度グループ表示を切り替える
          */
-        const updateFixedBarDisplay = () => {
+        const updateFixedBarDisplay = (overrideView = null) => {
             const line1 = document.getElementById('content-line-1');
             const line2 = document.getElementById('content-line-2');
             const currentShindoLabel = document.getElementById('current-shindo-label');
@@ -945,7 +945,7 @@
             
             if (FIXED_BAR_VIEWS.length === 0) return;
 
-            const currentView = FIXED_BAR_VIEWS[CURRENT_SHINDO_INDEX];
+            const currentView = overrideView || FIXED_BAR_VIEWS[CURRENT_SHINDO_INDEX];
 
             // 震度ラベルを更新
             currentShindoLabel.textContent = currentView.shindo;
@@ -981,13 +981,20 @@
             nextButton.disabled = CURRENT_SHINDO_INDEX === FIXED_BAR_VIEWS.length - 1;
 
             // ページ情報の表示を更新
-            if (currentView.pageTotal > 1) {
+            if (overrideView) {
+                // システムメッセージ表示中はページ情報を書き換え
+                pageInfo.textContent = `${currentView.pageCurrent}${currentView.pageTotal}`;
+                pageInfo.classList.remove('hidden');
+            } else if (currentView.pageTotal > 1) {
+                // 通常のページ情報
                 pageInfo.textContent = `${currentView.pageCurrent}/${currentView.pageTotal}`;
                 pageInfo.classList.remove('hidden');
             } else {
                 pageInfo.textContent = '';
                 pageInfo.classList.add('hidden');
             }
+            prevButton.disabled = isAutoplaying || CURRENT_SHINDO_INDEX === 0;
+            nextButton.disabled = isAutoplaying || CURRENT_SHINDO_INDEX === FIXED_BAR_VIEWS.length - 1;
         };
 
         // ナビゲーションボタンのイベントリスナー設定
@@ -1027,7 +1034,7 @@
             infiniteOption.value = 'Infinity';
             infiniteOption.textContent = '∞';
             loopsSelect.appendChild(infiniteOption);
-            loopsSelect.value = 'Infinity'; // デフォルトは無限ループ
+            loopsSelect.value = '3'; // デフォルトを3回に変更
 
             toggleButton.addEventListener('click', () => {
                 if (isAutoplaying) {
@@ -1038,43 +1045,62 @@
             });
         };
 
-        const startAutoplay = () => {
+        const startAutoplay = async () => {
             if (isAutoplaying || FIXED_BAR_VIEWS.length <= 1) return;
 
             const durationInput = document.getElementById('autoplay-duration');
             const loopsSelect = document.getElementById('autoplay-loops');
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
-
-            const duration = (parseInt(durationInput.value, 10) || 3) * 1000;
+            const duration = (parseInt(durationInput.value, 10) || 10) * 1000;
             const totalLoops = loopsSelect.value === 'Infinity' ? Infinity : parseInt(loopsSelect.value, 10);
 
             isAutoplaying = true;
             autoplayLoopCounter = 0;
+            CURRENT_SHINDO_INDEX = 0; // 常に最初のページから開始
             playIcon.classList.add('hidden');
             pauseIcon.classList.remove('hidden');
 
-            // 最初のページが最終ページの場合、ループカウンターを初期化
-            if (CURRENT_SHINDO_INDEX === FIXED_BAR_VIEWS.length - 1) {
-                autoplayLoopCounter = 1;
-            }
+            // 1. 開始ページ「地震情報」を表示
+            const startView = {
+                type: 'system', shindo: '情報', line1: '地震情報', line2: '',
+                shindoClass: 'bg-blue-600 text-white', pageCurrent: '▶', pageTotal: ''
+            };
+            updateFixedBarDisplay(startView);
 
-            autoplayIntervalId = setInterval(() => {
-                if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
-                    CURRENT_SHINDO_INDEX++;
-                } else {
-                    // 最終ページに到達
-                    if (totalLoops !== Infinity) {
+            // 2. 最初の情報ページへの遷移を待つ
+            await new Promise(resolve => setTimeout(resolve, duration));
+            if (!isAutoplaying) return; // 待機中に停止された場合
+
+            // 3. メインのページ送りを開始
+            const runAutoplay = () => {
+                updateFixedBarDisplay(); // 現在のインデックスのページを表示
+
+                autoplayIntervalId = setInterval(() => {
+                    if (!isAutoplaying) return;
+
+                    if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
+                        CURRENT_SHINDO_INDEX++;
+                    } else {
+                        // 最終ページに到達
                         autoplayLoopCounter++;
-                        if (autoplayLoopCounter >= totalLoops) {
+                        if (totalLoops !== Infinity && autoplayLoopCounter >= totalLoops) {
+                            // ループ終了
+                            const endView = {
+                                type: 'system', shindo: '情報', line1: '地震情報　おわり', line2: '',
+                                shindoClass: 'bg-blue-600 text-white', pageCurrent: '■', pageTotal: ''
+                            };
+                            updateFixedBarDisplay(endView);
                             pauseAutoplay();
                             return;
                         }
+                        CURRENT_SHINDO_INDEX = 0; // 次のループの開始に戻る
                     }
-                    CURRENT_SHINDO_INDEX = 0; // ループの開始に戻る
-                }
-                updateFixedBarDisplay();
-            }, duration);
+                    updateFixedBarDisplay();
+                }, duration);
+            };
+
+            runAutoplay();
         };
 
         const pauseAutoplay = () => {
@@ -1088,6 +1114,11 @@
             isAutoplaying = false;
             playIcon.classList.remove('hidden');
             pauseIcon.classList.add('hidden');
+
+            // 停止時に現在のインデックスの表示に戻す
+            if (FIXED_BAR_VIEWS.length > 0) {
+                updateFixedBarDisplay();
+            }
         };
 
         // --- 固定フッターのロジック 終了 ---
