@@ -273,7 +273,7 @@
             <!-- 右: コンテンツ表示エリア（グリーンバック） -->
             <div id="content-wrapper" class="flex-grow min-w-0 h-full ml-1.5">
                 <!-- 震度バッジをこちらに移動 -->
-                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-3xl h-14 flex items-center justify-center flex-shrink-0">選択なし</span>
+                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5">選択なし</span>
                 
                 <!-- テキスト表示エリア -->
                 <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-2">
@@ -961,7 +961,7 @@
             } else {
                 currentShindoLabel.classList.remove('hidden');
                 currentShindoLabel.textContent = currentView.shindo;
-                currentShindoLabel.className = 'shindo-badge text-3xl h-14 flex items-center justify-center flex-shrink-0';
+                currentShindoLabel.className = 'shindo-badge text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5';
                 currentShindoLabel.classList.add(...currentView.shindoClass.split(' '));
             }
             
