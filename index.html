@@ -1203,6 +1203,28 @@
         };
 
         /**
+         * キーボードショートカットを設定する
+         */
+        const setupKeyboardShortcuts = () => {
+            window.addEventListener('keydown', (event) => {
+                // テキスト入力中などはショートカットを無効にする
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT') {
+                    return;
+                }
+
+                // Spaceキーで再生/一時停止
+                if (event.code === 'Space') {
+                    event.preventDefault(); // ページのスクロールを防ぐ
+                    const toggleButton = document.getElementById('autoplay-toggle');
+                    // ボタンが表示されている場合のみクリックをトリガー
+                    if (toggleButton && toggleButton.offsetParent !== null) {
+                        toggleButton.click();
+                    }
+                }
+            });
+        };
+
+        /**
          * 自動ページ送り機能のセットアップ
          */
         const setupAutoplayControls = () => {
@@ -1427,6 +1449,9 @@
             // 自動ページ送り機能のセットアップ
             setupAutoplayControls();
             
+            // キーボードショートカットのセットアップ
+            setupKeyboardShortcuts();
+
             // 初回表示: データを取得していない状態のメッセージを設定
             document.getElementById('fetch-time-display').textContent = '最終取得日時: データを取得していません';
             
