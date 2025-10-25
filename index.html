@@ -310,6 +310,13 @@
                         <option value="slide">スライド</option>
                     </select>
                 </div>
+
+                <!-- 表示リセットボタン -->
+                <div id="reset-controls" style="display: none;">
+                    <button id="reset-display-button" class="text-white hover:text-red-400 transition p-1 rounded-full bg-gray-700 hover:bg-red-900/50 w-full text-sm">
+                        表示リセット
+                    </button>
+                </div>
             </div>
 
             <!-- 右: コンテンツ表示エリア（グリーンバック） -->
@@ -972,10 +979,12 @@
 
             if (FIXED_BAR_VIEWS.length > 1) {
                 autoplayControls.style.display = 'flex';
+                document.getElementById('reset-controls').style.display = 'block';
                 document.getElementById('transition-controls').style.display = 'flex';
                 shindoNav.style.display = 'flex';
             } else {
                 autoplayControls.style.display = 'none';
+                document.getElementById('reset-controls').style.display = 'none';
                 document.getElementById('transition-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
             }
@@ -996,6 +1005,7 @@
             const shindoNav = document.getElementById('shindo-nav');
             const autoplayControls = document.getElementById('autoplay-controls');
             const transitionControls = document.getElementById('transition-controls');
+            const resetControls = document.getElementById('reset-controls');
 
             // 変更: テキストとバッジを非表示にする
             line1.textContent = '';
@@ -1004,6 +1014,7 @@
             shindoNav.style.display = 'none';
             autoplayControls.style.display = 'none';
             transitionControls.style.display = 'none';
+            resetControls.style.display = 'none';
         }
 
         /**
@@ -1169,6 +1180,26 @@
                     CURRENT_SHINDO_INDEX++;
                     updateFixedBarDisplay(null, 'next');
                 }
+            });
+        };
+
+        /**
+         * 表示リセットボタンのセットアップ
+         */
+        const setupResetButton = () => {
+            const resetButton = document.getElementById('reset-display-button');
+            resetButton.addEventListener('click', () => {
+                // 1. 自動再生を停止し、UIをリセット
+                pauseAutoplay(true); // skipRedraw = true
+
+                // 2. 表示エリアをクリア
+                document.getElementById('content-line-1').textContent = '';
+                document.getElementById('content-line-2').textContent = '';
+                document.getElementById('current-shindo-label').classList.add('hidden');
+
+                // 3. ページインデックスをリセット
+                CURRENT_SHINDO_INDEX = 0;
+                updateNavControls({}, null); // ページ番号表示などをリセット
             });
         };
 
@@ -1387,6 +1418,9 @@
             
             // 固定バーのナビゲーションイベントを設定
             setupFixedBarNavigation();
+
+            // リセットボタンのセットアップ
+            setupResetButton();
 
             // トランジション設定コントロールを表示
             document.getElementById('transition-controls').style.display = 'flex';
