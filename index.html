@@ -402,6 +402,9 @@
 
             // 固定バーの1ページあたりに表示する市区町村の最大数
             CITIES_PER_PAGE: 15,
+
+            // APIを自動更新する間隔（ミリ秒）。30分 = 1800000ms
+            REFRESH_INTERVAL_MS: 30 * 60 * 1000,
         };
 
         /**
@@ -1549,6 +1552,9 @@
 
             // 初回データ取得を refreshData() で実行
             await refreshData();
+
+            // 定期的な自動更新を設定
+            setInterval(refreshData, CONFIG.REFRESH_INTERVAL_MS);
         };
     </script>
 </body>
