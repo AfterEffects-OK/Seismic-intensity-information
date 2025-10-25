@@ -1071,12 +1071,18 @@
             const loopsSelect = document.getElementById('autoplay-loops');
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
+            const toggleSwitch = document.getElementById('toggle-mode');
+            const refreshButton = document.getElementById('refresh-button');
             const duration = (parseInt(durationInput.value, 10) || 10) * 1000;
             const totalLoops = loopsSelect.value === 'Infinity' ? Infinity : parseInt(loopsSelect.value, 10);
 
             isAutoplaying = true;
             autoplayLoopCounter = 0;
             CURRENT_SHINDO_INDEX = 0; // 常に最初のページから開始
+            // コントロールをロック
+            toggleSwitch.disabled = true;
+            refreshButton.disabled = true;
+
             playIcon.classList.add('hidden');
             pauseIcon.classList.remove('hidden');
 
@@ -1146,12 +1152,18 @@
 
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
+            const toggleSwitch = document.getElementById('toggle-mode');
+            const refreshButton = document.getElementById('refresh-button');
 
             clearInterval(autoplayIntervalId);
             autoplayIntervalId = null;
             isAutoplaying = false;
             playIcon.classList.remove('hidden');
             pauseIcon.classList.add('hidden');
+
+            // コントロールのロックを解除
+            toggleSwitch.disabled = false;
+            refreshButton.disabled = false;
 
             if (skipRedraw) return;
 
