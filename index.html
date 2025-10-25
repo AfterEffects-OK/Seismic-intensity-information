@@ -248,14 +248,18 @@
 
         // --- ユーティリティ関数と設定 ---
 
-        // P2P地震情報 API v2のエンドポイント (地震情報コード551は「震源・震度情報」)
-        const API_URL = 'https://api.p2pquake.net/v2/history?codes=551&limit=100'; 
-        
-        // 地震一覧に表示する地震の「最大」震度の最低ライン (震度3)
-        const MIN_SCALE = 30; 
-        
-        // 詳細パネルの震度別観測地点に表示する「観測点」の最低震度ライン (震度3)
-        const MIN_SHINDO_DISPLAY_SCALE = 30;
+        const CONFIG = {
+            // P2P地震情報 API v2のエンドポイント (地震情報コード551は「震源・震度情報」)
+            API_URL: 'https://api.p2pquake.net/v2/history?codes=551&limit=100',
+            
+            // 地震一覧に表示する地震の「最大」震度の最低ライン (30: 震度3)
+            MIN_LIST_SCALE: 30,
+            
+            // 詳細パネルの震度別観測地点に表示する「観測点」の最低震度ライン (30: 震度3)
+            MIN_DETAIL_SCALE: 30,
+        };
+
+
 
         // 震度階級の数値コードを文字列に変換し、バッジの色クラスを返す
         const scaleToShindo = (scale) => {
@@ -368,15 +372,15 @@
             errorElement.classList.add('hidden');
             
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(CONFIG.API_URL);
                 if (!response.ok) {
                     throw new Error(`HTTPエラー: ${response.status}`);
                 }
                 const data = await response.json();
                 
-                // 最大震度3以上の地震のみをフィルタリング (MIN_SCALE=30を使用)
+                // 最大震度3以上の地震のみをフィルタリング (CONFIG.MIN_LIST_SCALEを使用)
                 const filteredEarthquakes = data.filter(eq => 
-                    eq.earthquake && eq.earthquake.maxScale >= MIN_SCALE
+                    eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
                 );
 
                 // eventidで重複するデータを排除し、最新（リストで最初に見つかったもの）を優先する
@@ -460,7 +464,7 @@
 
             rawPoints.forEach(point => {
                 // 震度3以上の観測点を含める
-                if (point.scale >= MIN_SHINDO_DISPLAY_SCALE) { 
+                if (point.scale >= CONFIG.MIN_DETAIL_SCALE) { 
                     const shindoLabel = scaleToShindo(point.scale).label;
                     
                     let name;
