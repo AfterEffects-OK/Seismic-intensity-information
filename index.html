@@ -3,11 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts: M PLUS 1 (SemiBold 600) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@600&display=swap" rel="stylesheet">
-
     <!-- タイトルを最大震度3以上に更新 -->
     <title>最大震度3以上の地震トラッカー</title>
     <!-- Tailwind CSS CDN -->
@@ -31,11 +26,10 @@
         .shindo-3 { background-color: #2563eb; color: white; } /* 震度3のバッジカラー */
         
         .shindo-badge {
-            font-family: 'M PLUS 1', sans-serif;
-            font-weight: 600;
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
+            font-weight: 700;
             min-width: 5rem;
             text-align: center;
         }
@@ -45,7 +39,7 @@
             /* 画面全体の高さから、上部要素（タイトル、説明、パディング）と固定フッター（h-16 + p-4）の高さを引いた残り */
             /* 固定フッターの高さを h-20 (5rem) に変更したため、計算を更新 */
             .full-height-panel-wrapper {
-                height: calc(100vh - 15rem); /* 14rem -> 15rem */
+                height: calc(100vh - 17rem); /* 15rem -> 17rem (h-28対応) */
             }
             /* リストと詳細パネルの高さを親に合わせる */
             #list-panel, #detail-panel {
@@ -151,7 +145,7 @@
     </style>
 </head>
 <!-- 画面下部の固定バー（h-20）のスペースを確保するために pb-20 に変更 -->
-<body class="p-4 md:p-8 min-h-screen pb-20">
+<body class="p-4 md:p-8 min-h-screen pb-28">
 
     <div class="max-w-7xl mx-auto">
         <!-- タイトルを最大震度3以上に更新 -->
@@ -233,7 +227,7 @@
     </div>
     
     <!-- === 新規追加: 配信画面用の固定震度表示バー === -->
-    <div id="fixed-shindo-bar" class="fixed bottom-0 left-0 right-0 shadow-2xl z-50 h-20 p-2">
+    <div id="fixed-shindo-bar" class="fixed bottom-0 left-0 right-0 shadow-2xl z-50 h-28 p-2">
         <div class="max-w-7xl mx-auto flex h-full items-center justify-between">
             
             <!-- 左: ステータス/切り替えボタン (背景色設定用のラッパーを追加) -->
@@ -273,7 +267,7 @@
             <!-- 右: コンテンツ表示エリア（グリーンバック） -->
             <div id="content-wrapper" class="flex-grow min-w-0 h-full ml-1.5">
                 <!-- 震度バッジをこちらに移動 -->
-                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-base h-7 flex items-center flex-shrink-0">選択なし</span>
+                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-sm h-7 flex items-center flex-shrink-0">選択なし</span>
                 
                 <!-- テキスト表示エリア -->
                 <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-4">
@@ -961,7 +955,7 @@
             } else {
                 currentShindoLabel.classList.remove('hidden');
                 currentShindoLabel.textContent = currentView.shindo;
-                currentShindoLabel.className = 'shindo-badge text-base h-7 flex items-center flex-shrink-0';
+                currentShindoLabel.className = 'shindo-badge text-sm h-7 flex items-center flex-shrink-0';
                 currentShindoLabel.classList.add(...currentView.shindoClass.split(' '));
             }
             
@@ -976,14 +970,16 @@
             // 概要表示の場合と震度別表示の場合でスタイルを切り替える
             if(currentView.type === 'summary') {
                 // 概要表示のスタイル: 2行折り返し表示、2行目も表示
-                line1.classList.add('text-lg', 'font-semibold', 'text-white');
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
                 line1.classList.remove('truncate'); // 折り返しを有効にする
                 line2.classList.remove('hidden'); // 2行目を表示
                 line2.textContent = currentView.line2; // 2行目にテキストを設定
-            } else {
+            } else if (currentView.type === 'shindo') {
                  // 震度別地域表示の場合: 2行にわたる折り返し表示
                 line1.classList.remove('truncate'); // truncateを解除して折り返しを有効に
-                line1.classList.add('text-lg', 'font-semibold', 'text-white');
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+            } else if (currentView.type === 'system') {
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white', 'pl-32');
             }
 
             // ナビゲーションボタンの状態を更新
@@ -1073,7 +1069,7 @@
 
             // 1. 開始ページ「地震情報」を表示
             const startView = {
-                type: 'system', shindo: '情報', line1: '　　　　地震情報', line2: '',
+                type: 'system', shindo: '情報', line1: '地震情報', line2: '',
                 shindoClass: 'bg-blue-600 text-white', pageCurrent: '▶', pageTotal: ''
             };
             updateFixedBarDisplay(startView);
@@ -1100,19 +1096,16 @@
                             autoplayIntervalId = null;
 
                             // 終了ページを表示
-                            updateFixedBarDisplay({
-                                type: 'system', shindo: '情報', line1: '　　　　地震情報　おわり', line2: '',
+                            const endView = {
+                                type: 'system', shindo: '情報', line1: '地震情報　おわり', line2: '',
                                 shindoClass: 'bg-blue-600 text-white', pageCurrent: '■', pageTotal: ''
-                            });
+                            };
+                            updateFixedBarDisplay(endView);
 
                             // 指定秒数後に表示をクリアする
                             setTimeout(() => {
-                                if (isAutoplaying) {
-                                    // 表示エリアのみをクリアし、ナビゲーションは表示したままにする
-                                    document.getElementById('content-line-1').textContent = '';
-                                    document.getElementById('current-shindo-label').classList.add('hidden');
-                                }
-                                pauseAutoplay(true); // 完全に停止状態に戻す (再描画なし)
+                                displayInitialFixedBarState(); // 表示をクリア
+                                pauseAutoplay(); // 完全に停止状態に戻す
                             }, duration);
                             return;
                         }
@@ -1132,7 +1125,7 @@
             runAutoplay();
         };
 
-        const pauseAutoplay = (skipRedraw = false) => {
+        const pauseAutoplay = () => {
             if (!isAutoplaying) return;
 
             const playIcon = document.getElementById('play-icon');
@@ -1144,11 +1137,9 @@
             playIcon.classList.remove('hidden');
             pauseIcon.classList.add('hidden');
 
-            if (skipRedraw) return;
-
             // 停止時に現在のインデックスの表示に戻す
             if (FIXED_BAR_VIEWS.length > 0) {
-                updateFixedBarDisplay(); 
+                updateFixedBarDisplay();
             } else {
                 displayInitialFixedBarState();
             }
