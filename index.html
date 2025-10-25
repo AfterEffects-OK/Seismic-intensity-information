@@ -677,8 +677,8 @@
                 '震度5強': 'shindo-5-plus', '震度5弱': 'shindo-5-minus', '震度4': 'shindo-4',
                 '震度3': 'shindo-3', '震度2': 'shindo-2', '震度1': 'shindo-1',
                 '概要': 'bg-gray-500 text-white', // 概要ビュー用
-                '震度情報なし': 'bg-gray-600 text-white', // データなし用
-                '震度不明': 'bg-gray-400 text-white'
+                '情報なし': 'bg-gray-600 text-white', // データなし用
+                '不明': 'bg-gray-400 text-white'
             };
             // 実際のラベルは '震度7' などの形式になっているため、ここでクラスを取得する
             return classMap[label] || 'bg-gray-400 text-white';
@@ -993,12 +993,33 @@
             }
 
             // 2. 津波情報 (利用可能な場合)
-            if (eq.tsunami && eq.tsunami !== 'Unknown') {
-                const tsunamiMessage = 
-                    eq.tsunami === 'None' ? 'この地震による津波の心配はありません' :
-                    eq.tsunami === 'Warning' ? '津波警報等（大津波警報・津波警報あるいは津波注意報）を発表中です' :
-                    eq.tsunami === 'Checking' ? 'ただいま津波の有無を調査中です' : '';
-                if (tsunamiMessage) summaryTexts.push(tsunamiMessage);
+            if (eq.tsunamiLabel) {
+                let tsunamiMessage = '';
+                switch (eq.tsunamiLabel) {
+                    case '大津波警報':
+                        tsunamiMessage = '大津波警報を発表中です。';
+                        break;
+                    case '津波警報':
+                        tsunamiMessage = '津波警報を発表中です。';
+                        break;
+                    case '津波注意報':
+                        tsunamiMessage = '津波注意報を発表中です。';
+                        break;
+                    case '津波なし':
+                        tsunamiMessage = 'この地震による津波の心配はありません。';
+                        break;
+                }
+                if (tsunamiMessage) {
+                    const tsunamiView = {
+                        type: 'summary',
+                        shindo: '津波', // バッジを「津波」に変更
+                        line1: tsunamiMessage,
+                        line2: '',
+                        shindoClass: eq.tsunamiClass || 'bg-gray-500 text-white'
+                    };
+                    // ページ分割ロジックは使わず、直接ビューとして追加
+                    FIXED_BAR_VIEWS.push(tsunamiView);
+                }
             }
 
             // 3. 震度情報への案内
