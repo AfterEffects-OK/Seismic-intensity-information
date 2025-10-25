@@ -1104,8 +1104,10 @@
 
                             // 指定秒数後に表示をクリアする
                             setTimeout(() => {
-                                displayInitialFixedBarState(); // 表示をクリア
-                                pauseAutoplay(); // 完全に停止状態に戻す
+                                // 表示エリアのみをクリアし、ナビゲーションは表示したままにする
+                                document.getElementById('content-line-1').textContent = '';
+                                document.getElementById('current-shindo-label').classList.add('hidden');
+                                pauseAutoplay(true); // 完全に停止状態に戻す (再描画なし)
                             }, duration);
                             return;
                         }
@@ -1125,8 +1127,9 @@
             runAutoplay();
         };
 
-        const pauseAutoplay = () => {
-            if (!isAutoplaying) return;
+        const pauseAutoplay = (skipRedraw = false) => {
+            // isAutoplaying が false の場合でも、アイコンの状態をリセットするために処理を続ける場合がある
+            // if (!isAutoplaying) return;
 
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
@@ -1136,6 +1139,8 @@
             isAutoplaying = false;
             playIcon.classList.remove('hidden');
             pauseIcon.classList.add('hidden');
+
+            if (skipRedraw) return;
 
             // 停止時に現在のインデックスの表示に戻す
             if (FIXED_BAR_VIEWS.length > 0) {
