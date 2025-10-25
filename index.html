@@ -881,22 +881,23 @@
             // --- 4. 表示を更新 ---
             CURRENT_SHINDO_INDEX = 0; 
 
-            // 地震を選択したら、まず表示をクリアし、コントロールボタンのみ表示する
+            // 地震を選択したら、コントロールボタンを表示し、表示エリアをクリアする
+            const autoplayControls = document.getElementById('autoplay-controls');
+            const line1 = document.getElementById('content-line-1');
+            const currentShindoLabel = document.getElementById('current-shindo-label');
+
             if (FIXED_BAR_VIEWS.length > 1) {
-                document.getElementById('autoplay-controls').style.display = 'flex';
+                autoplayControls.style.display = 'flex';
                 shindoNav.style.display = 'flex';
-                displayInitialFixedBarState(); // 表示をクリア
-            } else if (FIXED_BAR_VIEWS.length === 1 && FIXED_BAR_VIEWS[0].type === 'summary') {
-                // 概要ビューのみ（震度3以上の観測地点がない場合）
-                document.getElementById('autoplay-controls').style.display = 'none';
-                shindoNav.style.display = 'none';
-                displayInitialFixedBarState(); // 表示をクリア
             } else {
-                 // データはあるが、震度3以上の観測地点がない場合の特別処理
-                document.getElementById('autoplay-controls').style.display = 'none';
+                autoplayControls.style.display = 'none';
                 shindoNav.style.display = 'none';
-                displayInitialFixedBarState(); // 表示をクリア
             }
+
+            // 表示エリアをクリア
+            line1.textContent = '';
+            document.getElementById('content-line-2').textContent = '';
+            currentShindoLabel.classList.add('hidden');
         };
 
         /**
