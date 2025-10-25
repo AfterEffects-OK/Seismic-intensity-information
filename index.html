@@ -148,6 +148,39 @@
                 1px -1px 2px #000, 
                 -1px -1px 2px #000;
         }
+
+        /* --- スライドアニメーション --- */
+        @keyframes slide-out-to-left {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-50%); opacity: 0; }
+        }
+        @keyframes slide-in-from-right {
+            from { transform: translateX(50%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slide-out-to-right {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(50%); opacity: 0; }
+        }
+        @keyframes slide-in-from-left {
+            from { transform: translateX(-50%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .slide-out-left {
+            animation: slide-out-to-left 0.25s ease-out forwards;
+        }
+        .slide-in-right {
+            animation: slide-in-from-right 0.25s ease-in forwards;
+        }
+        .slide-out-right {
+            animation: slide-out-to-right 0.25s ease-out forwards;
+        }
+        .slide-in-left {
+            animation: slide-in-from-left 0.25s ease-in forwards;
+        }
+
+
     </style>
 </head>
 <!-- 画面下部の固定バー（h-20）のスペースを確保するために pb-20 に変更 -->
@@ -267,6 +300,14 @@
                     <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
+                </div>
+
+                <!-- トランジション設定 -->
+                <div id="transition-controls" class="flex items-center space-x-2" style="display: none;">
+                    <select id="transition-effect" class="autoplay-input text-sm p-1">
+                        <option value="cut" selected>カット</option>
+                        <option value="slide">スライド</option>
+                    </select>
                 </div>
             </div>
 
@@ -894,9 +935,11 @@
 
             if (FIXED_BAR_VIEWS.length > 1) {
                 autoplayControls.style.display = 'flex';
+                document.getElementById('transition-controls').style.display = 'flex';
                 shindoNav.style.display = 'flex';
             } else {
                 autoplayControls.style.display = 'none';
+                document.getElementById('transition-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
             }
 
@@ -915,6 +958,7 @@
             const currentShindoLabel = document.getElementById('current-shindo-label');
             const shindoNav = document.getElementById('shindo-nav');
             const autoplayControls = document.getElementById('autoplay-controls');
+            const transitionControls = document.getElementById('transition-controls');
 
             // 変更: テキストとバッジを非表示にする
             line1.textContent = '';
@@ -922,6 +966,7 @@
             currentShindoLabel.classList.add('hidden'); // バッジを隠す
             shindoNav.style.display = 'none';
             autoplayControls.style.display = 'none';
+            transitionControls.style.display = 'none';
         }
 
         /**
@@ -943,10 +988,11 @@
         /**
          * 固定フッター内の震度グループ表示を切り替える
          */
-        const updateFixedBarDisplay = (overrideView = null) => {
+        const updateFixedBarDisplay = (overrideView = null, direction = 'none') => {
             const line1 = document.getElementById('content-line-1');
             const line2 = document.getElementById('content-line-2');
             const currentShindoLabel = document.getElementById('current-shindo-label');
+            const contentWrapper = document.getElementById('content-wrapper');
             const prevButton = document.getElementById('shindo-prev');
             const nextButton = document.getElementById('shindo-next');
             const pageInfo = document.getElementById('shindo-page-info');
@@ -955,6 +1001,93 @@
 
             const currentView = overrideView || FIXED_BAR_VIEWS[CURRENT_SHINDO_INDEX];
 
+            const transitionEffect = document.getElementById('transition-effect').value;
+
+            // --- アニメーション処理 ---
+            if (transitionEffect === 'slide' && direction !== 'none' && !overrideView) {
+                const outClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
+                const inClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
+
+                // 1. 現在のコンテンツをスライドアウト
+                contentWrapper.classList.add(outClass);
+
+                // 2. アニメーション終了後にコンテンツを更新してスライドイン
+                setTimeout(() => {
+                    renderContent(currentView);
+                    contentWrapper.classList.remove(outClass);
+                    contentWrapper.classList.add(inClass);
+
+                    // 3. スライドインアニメーション終了後にクラスを削除
+                    setTimeout(() => {
+                        contentWrapper.classList.remove(inClass);
+                    }, 250);
+
+                }, 250);
+
+            } else {
+                // カットチェンジ、または初回表示
+                renderContent(currentView);
+            }
+
+            // --- ナビゲーションボタンとページ情報の更新 ---
+            updateNavControls(currentView, overrideView);
+        };
+
+        /**
+         * コンテンツ描画部分を分離
+         * @param {object} view - 表示するビューオブジェクト
+         */
+        const renderContent = (view) => {
+            const line1 = document.getElementById('content-line-1');
+            const line2 = document.getElementById('content-line-2');
+            const currentShindoLabel = document.getElementById('current-shindo-label');
+
+            // 既存のスタイルをリセット
+            line1.className = 'text-edge';
+            line2.className = 'text-xs text-gray-400 hidden';
+
+            // 震度ラベルを更新
+            if (view.type === 'system') {
+                currentShindoLabel.classList.add('hidden');
+            } else {
+                currentShindoLabel.classList.remove('hidden');
+                currentShindoLabel.textContent = view.shindo;
+                currentShindoLabel.className = 'shindo-badge text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5';
+                currentShindoLabel.classList.add(...view.shindoClass.split(' '));
+            }
+            
+            // コンテンツ行を更新
+            line1.innerHTML = view.line1;
+            line2.textContent = view.line2;
+
+            // line1は常に表示、line2は基本非表示
+            line1.classList.remove('hidden');
+            line2.classList.add('hidden');
+            
+            // タイプに応じたスタイル適用
+            if(view.type === 'summary') {
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+                line1.classList.remove('truncate');
+                line2.classList.remove('hidden');
+                line2.textContent = view.line2;
+            } else if (view.type === 'shindo') {
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+                line1.classList.remove('truncate');
+            } else if (view.type === 'system') {
+                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
+            }
+        };
+
+        /**
+         * ナビゲーションコントロール（ボタン、ページ情報）の更新
+         * @param {object} currentView - 現在のビュー
+         * @param {object} overrideView - システムメッセージなどの一時ビュー
+         */
+        const updateNavControls = (currentView, overrideView) => {
+            const prevButton = document.getElementById('shindo-prev');
+            const nextButton = document.getElementById('shindo-next');
+            const pageInfo = document.getElementById('shindo-page-info');
+
             // 震度ラベルを更新
             if (currentView.type === 'system') {
                 currentShindoLabel.classList.add('hidden');
@@ -962,30 +1095,6 @@
                 currentShindoLabel.classList.remove('hidden');
                 currentShindoLabel.textContent = currentView.shindo;
                 currentShindoLabel.className = 'shindo-badge text-3xl h-14 flex items-center justify-center flex-shrink-0 ml-1.5';
-                currentShindoLabel.classList.add(...currentView.shindoClass.split(' '));
-            }
-            
-            // コンテンツ行を更新 (line1はHTMLを含む場合があるため innerHTMLを使用)
-            line1.innerHTML = currentView.line1; // line1に全コンテンツを設定
-            line2.textContent = currentView.line2; // line2は空になる
-
-            // line1は常に表示、line2は常に非表示
-            line1.classList.remove('hidden');
-            line2.classList.add('hidden');
-            
-            // 概要表示の場合と震度別表示の場合でスタイルを切り替える
-            if(currentView.type === 'summary') {
-                // 概要表示のスタイル: 2行折り返し表示、2行目も表示
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
-                line1.classList.remove('truncate'); // 折り返しを有効にする
-                line2.classList.remove('hidden'); // 2行目を表示
-                line2.textContent = currentView.line2; // 2行目にテキストを設定
-            } else if (currentView.type === 'shindo') {
-                 // 震度別地域表示の場合: 2行にわたる折り返し表示
-                line1.classList.remove('truncate'); // truncateを解除して折り返しを有効に
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
-            } else if (currentView.type === 'system') {
-                line1.classList.add('text-4xl', 'font-semibold', 'text-white');
             }
 
             // ナビゲーションボタンの状態を更新
@@ -1022,7 +1131,7 @@
                 if (CURRENT_SHINDO_INDEX > 0) {
                     pauseAutoplay(); // 手動操作で自動送りを停止
                     CURRENT_SHINDO_INDEX--;
-                    updateFixedBarDisplay();
+                    updateFixedBarDisplay(null, 'prev');
                 }
             });
 
@@ -1030,7 +1139,7 @@
                 if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
                     pauseAutoplay(); // 手動操作で自動送りを停止
                     CURRENT_SHINDO_INDEX++;
-                    updateFixedBarDisplay();
+                    updateFixedBarDisplay(null, 'next');
                 }
             });
         };
@@ -1104,7 +1213,7 @@
 
             // 3. メインのページ送りを開始
             const runAutoplay = () => {
-                updateFixedBarDisplay(); // 現在のインデックスのページを表示
+                updateFixedBarDisplay(null, 'next'); // 現在のインデックスのページを表示
     
                 autoplayIntervalId = setInterval(() => {
                     if (!isAutoplaying) return;
@@ -1144,7 +1253,7 @@
     
                     if (CURRENT_SHINDO_INDEX < FIXED_BAR_VIEWS.length - 1) {
                     }
-                    updateFixedBarDisplay();
+                    updateFixedBarDisplay(null, 'next');
                 }, duration);
             };
 
@@ -1174,6 +1283,8 @@
             toggleLabel.classList.remove('opacity-50', 'cursor-not-allowed');
             earthquakeList.classList.remove('opacity-50', 'pointer-events-none');
             refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            // アニメーションクラスが残っている場合があるので削除
+            document.getElementById('content-wrapper').className = 'flex-grow min-w-0 h-full ml-1.5';
 
             if (skipRedraw) return;
 
@@ -1248,6 +1359,9 @@
             
             // 固定バーのナビゲーションイベントを設定
             setupFixedBarNavigation();
+
+            // トランジション設定コントロールを表示
+            document.getElementById('transition-controls').style.display = 'flex';
 
             // 自動ページ送り機能のセットアップ
             setupAutoplayControls();
