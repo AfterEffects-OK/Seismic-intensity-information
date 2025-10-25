@@ -237,9 +237,9 @@
         <div class="max-w-7xl mx-auto flex h-full items-center justify-between">
             
             <!-- 左: ステータス/切り替えボタン (背景色設定用のラッパーを追加) -->
-            <div id="shindo-status-wrapper" class="h-full flex items-center flex-shrink-0 pl-2">
+            <div id="shindo-status-wrapper" class="h-full flex flex-col justify-center space-y-1 flex-shrink-0 px-2">
                 <!-- 自動ページ送りコントロール -->
-                <div id="autoplay-controls" class="flex items-center space-x-2 mr-4" style="display: none;">
+                <div id="autoplay-controls" class="flex items-center space-x-2" style="display: none;">
                     <button id="autoplay-toggle" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600">
                         <!-- 再生アイコン -->
                         <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
@@ -263,7 +263,7 @@
                     <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-12 text-center"></span>
+                    <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-24 text-center"></span>
                     <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
@@ -998,8 +998,15 @@
                 pageInfo.textContent = `${currentView.pageCurrent}${currentView.pageTotal}`;
                 pageInfo.classList.remove('hidden');
             } else if (currentView.pageTotal > 1) {
-                // 通常のページ情報
-                pageInfo.textContent = `${currentView.pageCurrent}/${currentView.pageTotal}`;
+                let pageText = `${currentView.pageCurrent}/${currentView.pageTotal}`;
+                if (isAutoplaying) {
+                    const loopsSelect = document.getElementById('autoplay-loops');
+                    const totalLoops = loopsSelect.value === 'Infinity' ? '∞' : loopsSelect.value;
+                    // ループカウンターは0から始まるので+1する
+                    const currentLoop = autoplayLoopCounter + 1;
+                    pageText += ` L:${currentLoop}/${totalLoops}`;
+                }
+                pageInfo.textContent = pageText;
                 pageInfo.classList.remove('hidden');
             } else {
                 pageInfo.textContent = '';
