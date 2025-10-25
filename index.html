@@ -881,20 +881,21 @@
             // --- 4. 表示を更新 ---
             CURRENT_SHINDO_INDEX = 0; 
 
+            // 地震を選択したら、まず表示をクリアし、コントロールボタンのみ表示する
             if (FIXED_BAR_VIEWS.length > 1) {
                 document.getElementById('autoplay-controls').style.display = 'flex';
                 shindoNav.style.display = 'flex';
-                updateFixedBarDisplay(); // 初回表示 (概要ビュー)
+                displayInitialFixedBarState(); // 表示をクリア
             } else if (FIXED_BAR_VIEWS.length === 1 && FIXED_BAR_VIEWS[0].type === 'summary') {
                 // 概要ビューのみ（震度3以上の観測地点がない場合）
                 document.getElementById('autoplay-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
-                updateFixedBarDisplay();
+                displayInitialFixedBarState(); // 表示をクリア
             } else {
                  // データはあるが、震度3以上の観測地点がない場合の特別処理
                 document.getElementById('autoplay-controls').style.display = 'none';
                 shindoNav.style.display = 'none';
-                displayFixedBarNoShindoData();
+                displayInitialFixedBarState(); // 表示をクリア
             }
         };
 
@@ -911,7 +912,7 @@
             // 変更: テキストとバッジを非表示にする
             line1.textContent = '';
             line2.textContent = '';
-            currentShindoLabel.classList.add('hidden');
+            currentShindoLabel.classList.add('hidden'); // バッジを隠す
             shindoNav.style.display = 'none';
             autoplayControls.style.display = 'none';
         }
@@ -1134,6 +1135,8 @@
             // 停止時に現在のインデックスの表示に戻す
             if (FIXED_BAR_VIEWS.length > 0) {
                 updateFixedBarDisplay();
+            } else {
+                displayInitialFixedBarState();
             }
         };
 
