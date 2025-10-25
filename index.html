@@ -1088,13 +1088,19 @@
                         // 指定ループ回数に達したかチェック
                         if (totalLoops !== Infinity && autoplayLoopCounter >= totalLoops) {
                             // ループ終了処理
-                            clearInterval(autoplayIntervalId); // タイマーを停止
+                            clearInterval(autoplayIntervalId); // 1. タイマーを停止
+                            autoplayIntervalId = null;
+                            isAutoplaying = false;
+
+                            // 2. 終了ページを表示
                             const endView = {
                                 type: 'system', shindo: '情報', line1: '地震情報　おわり', line2: '',
                                 shindoClass: 'bg-blue-600 text-white', pageCurrent: '■', pageTotal: ''
                             };
                             updateFixedBarDisplay(endView);
-                            pauseAutoplay();
+                            // 3. 再生ボタンのアイコンを元に戻す
+                            document.getElementById('play-icon').classList.remove('hidden');
+                            document.getElementById('pause-icon').classList.add('hidden');
                             return;
                         }
                         // 次のループの開始に戻る
