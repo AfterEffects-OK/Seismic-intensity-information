@@ -181,6 +181,37 @@
             animation: slide-in-from-left 0.25s ease-in forwards;
         }
 
+        /* --- 津波情報バッジ --- */
+        .tsunami-badge {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 0.25rem; /* 4px */
+            font-size: 0.65rem; /* 10.4px */
+            line-height: 1;
+            font-weight: 600;
+        }
+        .tsunami-warning {
+            background-color: #f97316; /* orange-500 */
+            color: white;
+        }
+        .tsunami-none {
+            background-color: #4b5563; /* gray-600 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .tsunami-major-warning {
+            background-color: #6a0dad; /* purple-800 */
+            color: white;
+        }
+        .tsunami-warning-detailed { /* tsunami-warning と区別 */
+            background-color: #dc2626; /* red-600 */
+            color: white;
+        }
+        .tsunami-advisory {
+            background-color: #facc15; /* yellow-400 */
+            color: black;
+        }
+
+
 
     </style>
 </head>
@@ -361,7 +392,7 @@
 
         const CONFIG = {
             // P2P地震情報 API v2のエンドポイント (地震情報コード551は「震源・震度情報」)
-            API_URL: 'https://api.p2pquake.net/v2/history?codes=551&limit=100',
+            API_URL: 'https://api.p2pquake.net/v2/history?codes=551,552&limit=100',
             
             // 地震一覧に表示する地震の「最大」震度の最低ライン (30: 震度3)
             MIN_LIST_SCALE: 30,
@@ -522,6 +553,24 @@
                 }
                 const data = await response.json();
                 
+                // --- 1. 津波情報(552)を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
+                const tsunamiDetailsMap = new Map();
+                const tsunamiInfos = data.filter(d => d.code === 552);
+
+                tsunamiInfos.forEach(info => {
+                    const eventId = String(info.issue.event_id);
+                    if (!info.tsunami || !info.tsunami.forecasts) return;
+
+                    const grades = info.tsunami.forecasts.map(f => f.grade);
+                    let highestGrade = 'None';
+                    if (grades.includes('MajorWarning')) highestGrade = 'MajorWarning';
+                    else if (grades.includes('Warning')) highestGrade = 'Warning';
+                    else if (grades.includes('Advisory')) highestGrade = 'Advisory';
+
+                    // 既に登録されている情報より高いレベルの警報があれば更新
+                    tsunamiDetailsMap.set(eventId, highestGrade);
+                });
+
                 // 最大震度3以上の地震のみをフィルタリング (CONFIG.MIN_LIST_SCALEを使用)
                 const filteredEarthquakes = data.filter(eq => 
                     eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
@@ -540,7 +589,7 @@
 
                 // 処理済みのデータセットをグローバル変数に格納
                 // ここでは描画モードに関わらず、全ての情報を保持
-                PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(processEarthquake);
+                PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap));
                 return PROCESSED_EARTHQUAKES;
 
             } catch (error) {
@@ -558,7 +607,26 @@
          * @param {Object} earthquake - APIから取得した単一の地震情報オブジェクト
          * @returns {Object} 処理後の整形済み地震情報
          */
-        const processEarthquake = (earthquake) => {
+        const processEarthquake = (earthquake, tsunamiDetailsMap) => {
+            const eventId = String(earthquake.issue.eventid);
+            const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
+
+            const getTsunamiInfo = (grade) => {
+                switch (grade) {
+                    case 'MajorWarning':
+                        return { label: '大津波警報', class: 'tsunami-major-warning' };
+                    case 'Warning':
+                        return { label: '津波警報', class: 'tsunami-warning-detailed' };
+                    case 'Advisory':
+                        return { label: '津波注意報', class: 'tsunami-advisory' };
+                    case 'None':
+                        return { label: '津波なし', class: 'tsunami-none' };
+                    default:
+                        return { label: '', class: 'hidden' }; // CheckingやUnknownは表示しない
+                }
+            };
+            const tsunamiInfo = getTsunamiInfo(detailedTsunamiGrade);
+
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
                 id: String(earthquake.issue.eventid), 
@@ -567,6 +635,8 @@
                 depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
                 magnitude: earthquake.earthquake.magnitude || '不明',
                 tsunami: earthquake.earthquake.domesticTsunami, // 津波の有無を追加
+                tsunamiLabel: tsunamiInfo.label,
+                tsunamiClass: tsunamiInfo.class,
                 maxShindoLabel: scaleToShindo(earthquake.earthquake.maxScale).label,
                 maxShindoClass: scaleToShindo(earthquake.earthquake.maxScale).class,
                 maxScale: earthquake.earthquake.maxScale, // 最大震度を数値で保持
@@ -651,11 +721,16 @@
                 <div id="card-${eq.id}" 
                      class="earthquake-card py-3 px-2 rounded-lg shadow-sm border-l-4 border-gray-700 bg-gray-700 hover:bg-gray-600 transition duration-150 cursor-pointer"
                      data-event-id="${eq.id}">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm font-medium text-gray-100 truncate">${eq.epicenter}</span>
-                        <span class="shindo-badge ${eq.maxShindoClass} text-xs ml-2">${eq.maxShindoLabel}</span>
+                    <div class="flex justify-between items-start">
+                        <div class="flex-grow truncate pr-2">
+                            <p class="text-sm font-medium text-gray-100">${eq.epicenter}</p>
+                            <p class="text-xs text-gray-400">${eq.time}</p>
+                        </div>
+                        <div class="flex flex-col items-end space-y-1 flex-shrink-0">
+                            <span class="shindo-badge ${eq.maxShindoClass} text-xs">${eq.maxShindoLabel}</span>
+                            <span class="tsunami-badge ${eq.tsunamiClass}">${eq.tsunamiLabel}</span>
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-400">${eq.time}</p>
                 </div>
             `;
         };
