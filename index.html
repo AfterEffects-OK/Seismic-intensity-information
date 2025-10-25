@@ -37,9 +37,9 @@
         /* 左右分割レイアウトの高さ設定とスクロールを管理するコンテナ */
         @media (min-width: 768px) {
             /* 画面全体の高さから、上部要素（タイトル、説明、パディング）と固定フッター（h-16 + p-4）の高さを引いた残り */
-            /* 約 14rem (224px) を引くことで、固定フッターの上にメインコンテンツが収まるように調整 */
+            /* 固定フッターの高さを h-20 (5rem) に変更したため、計算を更新 */
             .full-height-panel-wrapper {
-                height: calc(100vh - 14rem);
+                height: calc(100vh - 15rem); /* 14rem -> 15rem */
             }
             /* リストと詳細パネルの高さを親に合わせる */
             #list-panel, #detail-panel {
@@ -113,8 +113,8 @@
         }
     </style>
 </head>
-<!-- 画面下部の固定バー（h-16程度）のスペースを確保するために pb-16 を追加 -->
-<body class="p-4 md:p-8 min-h-screen pb-16">
+<!-- 画面下部の固定バー（h-20）のスペースを確保するために pb-20 に変更 -->
+<body class="p-4 md:p-8 min-h-screen pb-20">
 
     <div class="max-w-7xl mx-auto">
         <!-- タイトルを最大震度3以上に更新 -->
@@ -196,7 +196,7 @@
     </div>
     
     <!-- === 新規追加: 配信画面用の固定震度表示バー === -->
-    <div id="fixed-shindo-bar" class="fixed bottom-0 left-0 right-0 shadow-2xl z-50 h-16 p-2">
+    <div id="fixed-shindo-bar" class="fixed bottom-0 left-0 right-0 shadow-2xl z-50 h-20 p-2">
         <div class="max-w-7xl mx-auto flex h-full items-center justify-between">
             
             <!-- 左: ステータス/切り替えボタン -->
