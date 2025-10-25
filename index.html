@@ -287,14 +287,16 @@
                 </div>
 
                 <!-- ナビゲーションボタン -->
-                <div id="shindo-nav" class="flex items-center space-x-1" style="display: none;">
-                    <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-20 text-center"></span>
-                    <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
+                <div id="shindo-nav" class="flex items-center justify-between" style="display: none;">
+                    <div class="flex items-center space-x-1">
+                        <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-20 text-center"></span>
+                        <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
                     <button id="autoplay-toggle" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600">
                         <!-- 再生アイコン -->
                         <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
