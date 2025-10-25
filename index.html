@@ -102,14 +102,11 @@
 
         /* 固定バー内のテキスト表示エリアのスタイル */
         #content-line-1 {
-            /* 2行まで表示して、はみ出した部分は省略記号(...)で表示 */
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            /* 変更: 省略表示をやめ、単純な折り返し表示にする */
             white-space: normal; /* テキストの折り返しを許可 */
             line-height: 1.4; /* 行の高さを調整 */
+            max-height: 2.8em; /* line-height * 2行分 */
+            overflow: hidden; /* はみ出した部分は隠す（JSでページ分割するため、基本的にはみ出さない） */
         }
     </style>
 </head>
@@ -200,12 +197,14 @@
         <div class="max-w-7xl mx-auto flex h-full items-center justify-between">
             
             <!-- 左: ステータス/切り替えボタン -->
-            <div id="shindo-status" class="flex items-center space-x-3 h-full flex-shrink-0">
+            <div id="shindo-status" class="flex items-center space-x-2 h-full flex-shrink-0">
                 <!-- ナビゲーションボタン -->
-                <div id="shindo-nav" class="flex space-x-1" style="display: none;">
+                <div id="shindo-nav" class="flex items-center space-x-1" style="display: none;">
                     <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
+                    <!-- ページ情報をここに表示 -->
+                    <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-12 text-center"></span>
                     <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
@@ -256,6 +255,36 @@
             CITIES_PER_PAGE: 15,
         };
 
+        /**
+         * テキストが指定された要素の2行分の高さに収まるか測定するヘルパー関数
+         * @param {string} htmlContent - 測定するHTMLコンテンツ
+         * @param {HTMLElement} targetElement - スタイル（幅、フォントサイズなど）の基準となる要素
+         * @returns {boolean} 2行に収まる場合はtrue、収まらない場合はfalse
+         */
+        const doesTextFitInTwoLines = (htmlContent, targetElement) => {
+            // 1. 画面外にダミーの測定用要素を作成
+            const measureDiv = document.createElement('div');
+            measureDiv.style.position = 'absolute';
+            measureDiv.style.left = '-9999px'; // 画面外に配置
+            measureDiv.style.visibility = 'hidden';
+
+            // 2. ターゲット要素のスタイルをコピー
+            const targetStyle = window.getComputedStyle(targetElement);
+            measureDiv.style.width = targetStyle.width;
+            measureDiv.style.font = targetStyle.font;
+            measureDiv.style.lineHeight = targetStyle.lineHeight;
+            measureDiv.style.wordBreak = 'keep-all'; // 分割判定のスタイルを合わせる
+
+            // 3. コンテンツを入れて高さを測定
+            measureDiv.innerHTML = htmlContent;
+            document.body.appendChild(measureDiv);
+            const contentHeight = measureDiv.scrollHeight;
+            const lineHeight = parseFloat(targetStyle.lineHeight);
+            document.body.removeChild(measureDiv); // 測定が終わったら削除
+
+            // 4. 2行分の高さを超えているか判定
+            return contentHeight <= (lineHeight * 2 + 2); // 誤差を考慮して少し余裕を持たせる
+        };
 
 
         // 震度階級の数値コードを文字列に変換し、バッジの色クラスを返す
@@ -720,64 +749,77 @@
                 return;
             }
             
-            // 1. 震度別グループデータを取得 (固定バーは常に市区町村別 'municipality' を使用)
+            const contentLine1 = document.getElementById('content-line-1');
             const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality');
-            
-            // 2. 全てのビューを構築
             FIXED_BAR_VIEWS = []; 
-            
-            // View 0: Earthquake Summary (概要)
-            const summaryView = {
-                type: 'summary',
-                shindo: '概要',
-                // 1行目: 震源地 (Mxx, 発生日時)
-                line1: `<span class="text-white">${eq.epicenter}</span> (M${eq.magnitude}, ${eq.time})`,
-                // 2行目: 最大震度
-                line2: `最大震度: ${eq.maxShindoLabel}`,
-                shindoClass: 'bg-gray-500 text-white' // Gray for summary
-            };
-            FIXED_BAR_VIEWS.push(summaryView);
 
-            // Subsequent Views: Shindo Groups (震度別地域)
-            shindoGroups.forEach(group => {
-                const cities = group.cities;
-                const totalPages = Math.ceil(cities.length / CONFIG.CITIES_PER_PAGE);
+            // --- 1. 概要ページの生成 (動的ページ分割) ---
+            const timePart = eq.time.split(' ')[1];
+            const summaryTexts = [
+                `${timePart}に${eq.epicenter}で ${eq.maxShindoLabel}の地震が発生しました`,
+                '各地の震度は次の通りです'
+            ];
 
-                if (totalPages <= 1) {
-                    // 1ページに収まる場合
-                    const cityListHtml = cities.map(city => `<span class="inline-block">${city}</span>`).join('　');
-                    FIXED_BAR_VIEWS.push({
-                        type: 'shindo',
-                        shindo: group.shindo,
-                        line1: cityListHtml,
-                        line2: '',
-                        shindoClass: shindoLabelToClass(group.shindo)
-                    });
-                } else {
-                    // 複数ページに分割する場合
-                    for (let i = 0; i < totalPages; i++) {
-                        const start = i * CONFIG.CITIES_PER_PAGE;
-                        const end = start + CONFIG.CITIES_PER_PAGE;
-                        const pageCities = cities.slice(start, end);
-                        const cityListHtml = pageCities.map(city => `<span class="inline-block">${city}</span>`).join('　');
-                        
-                        FIXED_BAR_VIEWS.push({
-                            type: 'shindo',
-                            shindo: `${group.shindo} (${i + 1}/${totalPages})`, // 例: 震度5弱 (1/3)
-                            line1: cityListHtml,
-                            line2: '',
-                            shindoClass: shindoLabelToClass(group.shindo)
-                        });
+            summaryTexts.forEach(text => {
+                if (!doesTextFitInTwoLines(text, contentLine1)) {
+                    // 2行に収まらない場合、単語（スペース区切り）で分割を試みる
+                    const words = text.split(' ');
+                    let currentPageText = '';
+                    for (let i = 0; i < words.length; i++) {
+                        const testText = currentPageText ? `${currentPageText} ${words[i]}` : words[i];
+                        if (!doesTextFitInTwoLines(testText, contentLine1)) {
+                            FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                            currentPageText = words[i];
+                        } else {
+                            currentPageText = testText;
+                        }
                     }
+                    if (currentPageText) {
+                        FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                    }
+                } else {
+                    // 2行に収まる場合はそのまま追加
+                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: text, line2: '', shindoClass: 'bg-gray-500 text-white' });
                 }
             });
 
-            // 3. 表示インデックスをリセットし、表示を更新
+            // --- 2. 震度別地域ページの生成 (動的ページ分割) ---
+            shindoGroups.forEach(group => {
+                const cities = group.cities;
+                let pageCities = [];
+
+                for (let i = 0; i < cities.length; i++) {
+                    const testCities = [...pageCities, cities[i]];
+                    const testHtml = testCities.map(c => `<span class="inline-block">${c}</span>`).join('　');
+
+                    if (!doesTextFitInTwoLines(testHtml, contentLine1) && pageCities.length > 0) {
+                        // 収まらなくなったので、直前までの内容でページを作成
+                        const pageHtml = pageCities.map(c => `<span class="inline-block">${c}</span>`).join('　');
+                        FIXED_BAR_VIEWS.push({ type: 'shindo', shindo: group.shindo, line1: pageHtml, line2: '', shindoClass: shindoLabelToClass(group.shindo) });
+                        // 新しいページを開始
+                        pageCities = [cities[i]];
+                    } else {
+                        pageCities.push(cities[i]);
+                    }
+                }
+                // ループ終了後、残りの市区町村で最後のページを作成
+                if (pageCities.length > 0) {
+                    const pageHtml = pageCities.map(c => `<span class="inline-block">${c}</span>`).join('　');
+                    FIXED_BAR_VIEWS.push({ type: 'shindo', shindo: group.shindo, line1: pageHtml, line2: '', shindoClass: shindoLabelToClass(group.shindo) });
+                }
+            });
+
+            // --- 3. 全てのビューにページ番号を付与 ---
+            const totalViews = FIXED_BAR_VIEWS.length;
+            FIXED_BAR_VIEWS.forEach((view, index) => {
+                view.pageCurrent = index + 1;
+                view.pageTotal = totalViews;
+            });
+
+            // --- 4. 表示を更新 ---
             CURRENT_SHINDO_INDEX = 0; 
 
-            // 4. ナビゲーションと表示を更新
             if (FIXED_BAR_VIEWS.length > 1) {
-                // 概要と震度別地域の2つ以上のビューがある場合のみナビゲーションを表示
                 shindoNav.style.display = 'flex';
                 updateFixedBarDisplay(); // 初回表示 (概要ビュー)
             } else if (FIXED_BAR_VIEWS.length === 1 && FIXED_BAR_VIEWS[0].type === 'summary') {
@@ -832,17 +874,18 @@
             const currentShindoLabel = document.getElementById('current-shindo-label');
             const prevButton = document.getElementById('shindo-prev');
             const nextButton = document.getElementById('shindo-next');
+            const pageInfo = document.getElementById('shindo-page-info');
             
             if (FIXED_BAR_VIEWS.length === 0) return;
 
             const currentView = FIXED_BAR_VIEWS[CURRENT_SHINDO_INDEX];
-            const shindoClass = currentView.shindoClass;
 
             // 震度ラベルを更新
             currentShindoLabel.textContent = currentView.shindo;
             
             // classList.add() の代わりにスプレッド構文でクラス文字列を展開して渡す
             currentShindoLabel.className = 'shindo-badge text-sm h-7 flex items-center';
+            const shindoClass = currentView.shindoClass;
             currentShindoLabel.classList.add(...shindoClass.split(' '));
             
             // コンテンツ行を更新 (line1はHTMLを含む場合があるため innerHTMLを使用)
@@ -855,11 +898,11 @@
             
             // 概要表示の場合と震度別表示の場合でスタイルを切り替える
             if(currentView.type === 'summary') {
-                // 概要表示のスタイル
-                line1.classList.add('truncate'); // Tailwindのtruncateを適用
-                line1.classList.remove('text-lg', 'font-semibold', 'text-white');
-                line2.classList.remove('hidden'); // 概要表示の時だけ2行目を表示
-                line2.textContent = currentView.line2;
+                // 概要表示のスタイル: 2行折り返し表示、2行目も表示
+                line1.classList.add('text-lg', 'font-semibold', 'text-white');
+                line1.classList.remove('truncate'); // 折り返しを有効にする
+                line2.classList.remove('hidden'); // 2行目を表示
+                line2.textContent = currentView.line2; // 2行目にテキストを設定
             } else {
                  // 震度別地域表示の場合: 2行にわたる折り返し表示
                 line1.classList.remove('truncate'); // truncateを解除して折り返しを有効に
@@ -869,6 +912,15 @@
             // ナビゲーションボタンの状態を更新
             prevButton.disabled = CURRENT_SHINDO_INDEX === 0;
             nextButton.disabled = CURRENT_SHINDO_INDEX === FIXED_BAR_VIEWS.length - 1;
+
+            // ページ情報の表示を更新
+            if (currentView.pageTotal > 1) {
+                pageInfo.textContent = `${currentView.pageCurrent}/${currentView.pageTotal}`;
+                pageInfo.classList.remove('hidden');
+            } else {
+                pageInfo.textContent = '';
+                pageInfo.classList.add('hidden');
+            }
         };
 
         // ナビゲーションボタンのイベントリスナー設定
