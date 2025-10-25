@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts: M PLUS 1 (SemiBold 600) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@600&display=swap" rel="stylesheet">
+
     <!-- タイトルを最大震度3以上に更新 -->
     <title>最大震度3以上の地震トラッカー</title>
     <!-- Tailwind CSS CDN -->
@@ -26,10 +31,11 @@
         .shindo-3 { background-color: #2563eb; color: white; } /* 震度3のバッジカラー */
         
         .shindo-badge {
+            font-family: 'M PLUS 1', sans-serif;
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
-            font-weight: 700;
+            font-weight: 600;
             min-width: 8rem; /* 「震度6弱」が収まる幅に統一 */
             text-align: center;
         }
