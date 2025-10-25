@@ -1143,15 +1143,15 @@
                 pageInfo.textContent = `${currentView.pageCurrent}${currentView.pageTotal}`;
                 pageInfo.classList.remove('hidden');
             } else if (currentView.pageTotal > 1) {
-                let pageText = `${currentView.pageCurrent}/${currentView.pageTotal}`;
+                let pageHTML = `<span class="inline-block">${currentView.pageCurrent}/${currentView.pageTotal}</span>`;
                 if (isAutoplaying) {
                     const loopsSelect = document.getElementById('autoplay-loops');
                     const totalLoops = loopsSelect.value === 'Infinity' ? '∞' : loopsSelect.value;
                     // ループカウンターは0から始まるので+1する
                     const currentLoop = autoplayLoopCounter + 1;
-                    pageText += ` L:${currentLoop}/${totalLoops}`;
+                    pageHTML += ` <span class="inline-block">L:${currentLoop}/${totalLoops}</span>`;
                 }
-                pageInfo.textContent = pageText;
+                pageInfo.innerHTML = pageHTML;
                 pageInfo.classList.remove('hidden');
             } else {
                 pageInfo.textContent = '';
