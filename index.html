@@ -110,6 +110,13 @@
             background-color: #00ff00;
         }
 
+        /* 右側のコンテンツエリア（バッジ＋テキスト）のラッパー */
+        #content-wrapper {
+            background-color: #00ff00; /* クロマキーグリーン */
+            display: flex;
+            align-items: center;
+        }
+
         /* 固定バー内のテキスト表示エリアのスタイル */
         #content-line-1 {
             /* 変更: 省略表示をやめ、単純な折り返し表示にする */
@@ -207,30 +214,30 @@
         <div class="max-w-7xl mx-auto flex h-full items-center justify-between">
             
             <!-- 左: ステータス/切り替えボタン (背景色設定用のラッパーを追加) -->
-            <div id="shindo-status-wrapper" class="h-full flex-shrink-0">
-                <div id="shindo-status" class="flex items-center space-x-2 h-full">
-                    <!-- ナビゲーションボタン -->
-                    <div id="shindo-nav" class="flex items-center space-x-1" style="display: none;">
-                        <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <!-- ページ情報をここに表示 -->
-                        <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-12 text-center"></span>
-                        <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-                    
-                    <!-- 現在表示中の震度カテゴリー/概要 -->
-                    <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-sm h-7 flex items-center">選択なし</span>
+            <div id="shindo-status-wrapper" class="h-full flex items-center flex-shrink-0">
+                <!-- ナビゲーションボタンのみを左側に残す -->
+                <div id="shindo-nav" class="flex items-center space-x-1" style="display: none;">
+                    <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <!-- ページ情報をここに表示 -->
+                    <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-12 text-center"></span>
+                    <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
                 </div>
             </div>
 
-            <!-- 右: コンテンツ表示エリア (2行分) -->
-            <!-- 以前の #hypocenter-summary と #location-list を統合し、動的に内容を書き換える -->
-            <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-4">
-                <div id="content-line-1" class="text-sm font-medium text-gray-300 truncate">地震を選択してください。</div>
-                <div id="content-line-2" class="text-xs text-gray-400 hidden"></div>
+            <!-- 右: コンテンツ表示エリア（グリーンバック） -->
+            <div id="content-wrapper" class="flex-grow min-w-0 h-full ml-4">
+                <!-- 震度バッジをこちらに移動 -->
+                <span id="current-shindo-label" class="shindo-badge bg-gray-600 text-white text-sm h-7 flex items-center flex-shrink-0">選択なし</span>
+                
+                <!-- テキスト表示エリア -->
+                <div id="shindo-content" class="flex-grow min-w-0 h-full overflow-hidden ml-4">
+                    <div id="content-line-1" class="text-sm font-medium text-gray-300 truncate">地震を選択してください。</div>
+                    <div id="content-line-2" class="text-xs text-gray-400 hidden"></div>
+                </div>
             </div>
         </div>
     </div>
