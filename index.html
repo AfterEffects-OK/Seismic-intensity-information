@@ -1293,7 +1293,7 @@
 
             // 3. メインのページ送りを開始
             const runAutoplay = () => {
-                updateFixedBarDisplay(null, 'next'); // 現在のインデックスのページを表示
+                updateFixedBarDisplay(); // 現在のインデックスのページを表示（アニメーション方向なし）
     
                 autoplayIntervalId = setInterval(() => {
                     if (!isAutoplaying) return;
