@@ -38,6 +38,8 @@
             font-weight: 700;
             min-width: 9rem; /* 4文字のテキストが収まる幅に調整 */
             text-align: center;
+            border: 2px solid black;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
 
         /* 左右分割レイアウトの高さ設定とスクロールを管理するコンテナ */
@@ -142,26 +144,11 @@
 
         /* テキストに黒い縁取りを追加するクラス */
         .text-edge {
-            /* 影を複数重ねて、より太く滑らかな縁取りを作成 */
+            /* 影を複数重ねて、滑らかな縁取りとドロップシャドウを作成 */
             text-shadow:
-                2px 0px 2px #000,
-                -2px 0px 2px #000, 
-                0px 2px 2px #000, 
-                0px -2px 2px #000,
-                2px 2px 2px #000, 
-                -2px 2px 2px #000, 
-                2px -2px 2px #000, 
-                -2px -2px 2px #000,
-
-                4px 0px 2px #000,
-                -4px 0px 2px #000, 
-                0px 4px 2px #000, 
-                0px -4px 2px #000,
-                4px 4px 2px #000, 
-                -4px 4px 2px #000, 
-                4px -4px 2px #000, 
-                -4px -4px 2px #000,
-                3px 3px 8px #000;
+                -2px -2px 3px #000, 2px -2px 3px #000, -2px 2px 3px #000, 2px 2px 3px #000, /* 4隅の太い影 */
+                -2px 0 3px #000, 2px 0 3px #000, 0 -2px 3px #000, 0 2px 3px #000,       /* 上下左右の太い影 */
+                0 4px 8px rgba(0,0,0,0.5); /* ドロップシャドウ */
         }
 
         /* --- スライドアニメーション --- */
