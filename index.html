@@ -230,22 +230,22 @@
     </style>
 </head>
 <!-- 画面下部の固定バー（h-20）のスペースを確保するために pb-20 に変更 -->
-<body class="p-4 md:p-8 min-h-screen pb-26">
+<body class="p-4 md:p-8 min-h-screen pb-32">
 
     <div>
         <!-- タイトルを最大震度3以上に更新 -->
-        <h1 class="text-3xl font-extrabold text-white mb-0">地震情報トラッカー</h1>
+        <h1 class="text-3xl font-extrabold text-white mb-2">地震情報トラッカー</h1>
         <!-- 説明文を最大震度3以上に更新 -->
-        <p class="text-gray-400 mb-3">直近の地震の中から、最大震度3以上を観測した地震を抽出して表示します。</p>
+        <p class="text-gray-400 mb-4">直近の地震の中から、最大震度3以上を観測した地震を抽出して表示します。</p>
 
         <!-- メインコンテンツ (左右分割コンテナ) - md:grid-cols-3 に変更して 1:2 分割 (1/3 + 2/3) -->
         <div class="grid grid-cols-1 md:grid-cols-3 md:gap-8 full-height-panel-wrapper">
             
             <!-- 左パネル: 地震一覧 (1/3 幅) -->
-            <div id="list-panel" class="md:col-span-1 bg-gray-800 rounded-xl shadow-2xl px-4 pb-2 md:px-6 md:pb-3 md:mb-0">
+            <div id="list-panel" class="md:col-span-1 bg-gray-800 rounded-xl shadow-2xl p-4 md:p-6 mb-6 md:mb-0">
                 
                 <!-- 変更点: タイトルとリフレッシュボタンをflexコンテナにまとめる -->
-                <div class="flex justify-between items-center mb-1 border-b border-gray-700 pb-0 sticky top-0 bg-gray-800 z-10">
+                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2 sticky top-0 bg-gray-800 z-10">
                     <h2 class="text-xl font-bold text-white">地震一覧</h2>
                     <button id="refresh-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg shadow transition duration-150 text-sm">
                         <span id="refresh-text">API更新</span>
@@ -253,7 +253,27 @@
                 </div>
                 
                 <!-- データの取得日時を表示する要素を追加 -->
-                <p id="fetch-time-display" class="text-xs text-gray-400 text-right mb-2">最終取得日時: データを取得していません</p>
+                <p id="fetch-time-display" class="text-xs text-gray-400 text-right mb-4">最終取得日時: データを取得していません</p>
+
+                <!-- 観測点 / 市町村 切替スイッチの追加 -->
+                <div class="flex items-center justify-end mb-4">
+                    <!-- FALSE (unchecked) = 市区町村別 (New Default) -->
+                    <!-- 表記を '市区町村別' に修正 -->
+                    <span id="label-municipality" class="text-sm font-bold text-blue-400 mr-2 transition-colors duration-200">市区町村別</span>
+                    <label for="toggle-mode" class="flex items-center cursor-pointer">
+                        <div class="relative">
+                            <!-- 初期状態: municipality (市区町村別) なので unchecked -->
+                            <input type="checkbox" id="toggle-mode" class="sr-only">
+                            <!-- Background (カスタムスタイルで設定) -->
+                            <div class="toggle-bg w-12 h-6 rounded-full shadow-inner transition-colors duration-200"></div>
+                            <!-- Dot (カスタムスタイルで設定) -->
+                            <div class="dot absolute left-1 top-1 w-4 h-4 rounded-full shadow transition-transform duration-200"></div>
+                        </div>
+                    </label>
+                    <!-- TRUE (checked) = 観測点別 -->
+                    <span id="label-point" class="text-sm text-gray-400 font-medium ml-2 transition-colors duration-200">観測点別</span>
+                </div>
+
 
                 <div id="loading" class="text-center p-8 text-xl font-medium text-blue-400 hidden">
                     <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full mr-3"></div>
@@ -277,23 +297,9 @@
             </div>
 
             <!-- 右パネル: 詳細表示 (2/3 幅に変更) -->
-            <div id="detail-panel" class="md:col-span-2 bg-gray-800 rounded-xl shadow-2xl px-4 pb-2 md:px-6 md:pb-3 mb-6 md:mb-0">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-0 sticky top-0 bg-gray-800 z-10">
-                    <h2 class="text-xl font-bold text-white">地震詳細</h2>
-                    <!-- 観測点 / 市町村 切替スイッチをこちらに移動 -->
-                    <div class="flex items-center justify-end">
-                        <span id="label-municipality" class="text-sm font-bold text-blue-400 mr-2 transition-colors duration-200">市区町村別</span>
-                        <label for="toggle-mode" class="flex items-center cursor-pointer" title="表示する地域の粒度を「市区町村別」と「観測点別」で切り替えます">
-                            <div class="relative">
-                                <input type="checkbox" id="toggle-mode" class="sr-only">
-                                <div class="toggle-bg w-12 h-6 rounded-full shadow-inner transition-colors duration-200"></div>
-                                <div class="dot absolute left-1 top-1 w-4 h-4 rounded-full shadow transition-transform duration-200"></div>
-                            </div>
-                        </label>
-                        <span id="label-point" class="text-sm text-gray-400 font-medium ml-2 transition-colors duration-200">観測点別</span>
-                    </div>
-                </div>
-
+            <div id="detail-panel" class="md:col-span-2 bg-gray-800 rounded-xl shadow-2xl p-4 md:p-6">
+                <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2 sticky top-0 bg-gray-800 z-10">地震詳細</h2>
+                
                 <div id="detail-content">
                     <div class="text-center p-8 text-gray-400">
                         <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 8h18m-6 4h6m-6 4h6M3 12h2M3 16h2"></path></svg>
@@ -830,12 +836,7 @@
             const modeLabel = DISPLAY_MODE === 'municipality' ? '市区町村別' : '観測点別'; 
 
             const html = `
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-2xl font-bold text-white">${eq.epicenter}</h3>
-                    <div class="flex-shrink-0 ml-4">
-                        <span class="shindo-badge ${eq.maxShindoClass} text-base">${eq.maxShindoLabel}</span>
-                    </div>
-                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">${eq.epicenter}</h3>
                 <!-- ダークモード対応: text-gray-600 -> text-gray-300, border-b -> border-b border-gray-700 -->
                 <div class="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm text-gray-300 border-b border-gray-700 pb-4">
                     <p><strong>発生日時:</strong> ${eq.time}</p>
@@ -854,7 +855,7 @@
                         })()}
                     </p>
                 </div>
-
+ 
                 <!-- ダークモード対応: text-gray-700 -> text-gray-200 -->
                 <h4 class="text-lg font-bold text-gray-200 mb-3">震度別観測地点 (${modeLabel} / 震度3以上)</h4>
                 <!-- ダークモード対応: text-gray-500 -> text-gray-400 -->
