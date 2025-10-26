@@ -650,13 +650,19 @@
             };
             const tsunamiInfo = getTsunamiInfo(detailedTsunamiGrade);
 
+            // レポートに基づきマグニチュードの取得方法を修正
+            const magValue = earthquake.earthquake?.hypocenter?.magnitude?.value;
+            const magnitudeDisplay = (magValue !== undefined && magValue !== null && !isNaN(magValue)) 
+                ? parseFloat(magValue).toFixed(1) 
+                : '不明';
+
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
                 id: String(earthquake.issue.eventid), 
                 time: formatDateTime(earthquake.issue.time),
                 epicenter: earthquake.earthquake.hypocenter.name || '不明',
                 depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
-                magnitude: earthquake.earthquake.magnitude || '不明',
+                magnitude: magnitudeDisplay,
                 tsunami: earthquake.earthquake.domesticTsunami, // 津波の有無を追加
                 tsunamiLabel: tsunamiInfo.label,
                 tsunamiClass: tsunamiInfo.class,
