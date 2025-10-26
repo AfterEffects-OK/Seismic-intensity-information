@@ -23,11 +23,11 @@
         
         /* 震度バッジの色定義 (変更なし) */
         .shindo-7 { background-color: #6a0dad; color: white; }
-        .shindo-6-plus { background-color: #dc2626; color: white; }
+        .shindo-6-plus { background-color: #cd1616; color: white; }
         .shindo-6-minus { background-color: #ef4444; color: white; }
-        .shindo-5-plus { background-color: #f97316; color: white; }
-        .shindo-5-minus { background-color: #facc15; color: black; }
-        .shindo-4 { background-color: #10b981; color: white; }
+        .shindo-5-plus { background-color: #e36105; color: white; }
+        .shindo-5-minus { background-color: #faa615; color: black; } 
+        .shindo-4 { background-color: #e4d907; color: rgb(0, 0, 0); } /* 変更前の色：#10b981 */
         .shindo-3 { background-color: #2563eb; color: white; } /* 震度3のバッジカラー */
         
         .shindo-badge {
@@ -389,7 +389,7 @@
         let LAST_FETCH_TIME = null; 
         
         // --- 固定バー用のグローバル変数 ---
-        // 概要ビュー(インデックス0) + 震度別地域ビュー の全てのビューを格納
+        // 概況ビュー(インデックス0) + 震度別地域ビュー の全てのビューを格納
         let FIXED_BAR_VIEWS = []; 
         let CURRENT_SHINDO_INDEX = 0; // 現在フッターに表示されているビューのインデックス
         // ---------------------------------
@@ -707,7 +707,7 @@
                 '震度7': 'shindo-7', '震度6強': 'shindo-6-plus', '震度6弱': 'shindo-6-minus', 
                 '震度5強': 'shindo-5-plus', '震度5弱': 'shindo-5-minus', '震度4': 'shindo-4',
                 '震度3': 'shindo-3', '震度2': 'shindo-2', '震度1': 'shindo-1',
-                '概要': 'bg-gray-500 text-white', // 概要ビュー用
+                '概況': 'bg-gray-500 text-white', // 概況ビュー用
                 '情報なし': 'bg-gray-600 text-white', // データなし用
                 '不明': 'bg-gray-400 text-white'
             };
@@ -1014,7 +1014,7 @@
             const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality');
             FIXED_BAR_VIEWS = []; 
 
-            // --- 1. 概要ページの生成 (動的ページ分割) ---
+            // --- 1. 概況ページの生成 (動的ページ分割) ---
             const timePart = eq.time.split(' ')[1];
             const summaryTexts = [];
 
@@ -1036,22 +1036,22 @@
                     for (let i = 0; i < words.length; i++) {
                         const testText = currentPageText ? `${currentPageText} ${words[i]}` : words[i];
                         if (!doesTextFitInTwoLines(testText, contentLine1)) {
-                            FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                            FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
                             currentPageText = words[i];
                         } else {
                             currentPageText = testText;
                         }
                     }
                     if (currentPageText) {
-                        FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                        FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
                     }
                 } else {
                     // 2行に収まる場合はそのまま追加
-                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概要', line1: text, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: text, line2: '', shindoClass: 'bg-gray-500 text-white' });
                 }
             });
 
-            // 3. 津波情報 (利用可能な場合) - 概要ページが生成された後に挿入
+            // 3. 津波情報 (利用可能な場合) - 概況ページが生成された後に挿入
             if (eq.tsunamiLabel) {
                 let tsunamiMessage = '';
                 switch (eq.tsunamiLabel) {
