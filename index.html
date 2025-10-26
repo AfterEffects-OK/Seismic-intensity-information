@@ -1071,7 +1071,7 @@
                 if (tsunamiMessage) {
                     const tsunamiView = {
                         type: 'summary',
-                        shindo: '津波', // バッジを「津波」に変更
+                        shindo: '津 波', // バッジを「津波」に変更
                         line1: tsunamiMessage,
                         line2: '',
                         shindoClass: eq.tsunamiClass || 'bg-gray-500 text-white'
@@ -1081,7 +1081,7 @@
             }
 
             // --- 4. 「各地の震度は〜」ページの生成 ---
-            const finalTextView = { type: 'summary', shindo: '概要', line1: '各地の震度は次の通りです', line2: '', shindoClass: 'bg-gray-500 text-white' };
+            const finalTextView = { type: 'summary', shindo: '震度情報', line1: '各地の震度は次のとおりです', line2: '', shindoClass: 'bg-gray-500 text-white' };
             FIXED_BAR_VIEWS.push(finalTextView);
 
             // --- 5. 震度別地域ページの生成 (動的ページ分割) ---
