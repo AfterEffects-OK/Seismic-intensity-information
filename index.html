@@ -246,7 +246,7 @@
             <div id="list-panel" class="md:col-span-1 bg-gray-800 rounded-xl shadow-2xl p-4 md:p-6 mb-6 md:mb-0">
                 
                 <!-- 変更点: タイトルとリフレッシュボタンをflexコンテナにまとめる -->
-                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2 sticky top-0 bg-gray-800 z-10">
+                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2 sticky top-0 bg-gray-800 z-10" title="手動で最新の地震情報を取得します">
                     <h2 class="text-xl font-bold text-white">地震一覧</h2>
                     <button id="refresh-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg shadow transition duration-150 text-sm">
                         <span id="refresh-text">API更新</span>
@@ -261,7 +261,7 @@
                     <!-- FALSE (unchecked) = 市区町村別 (New Default) -->
                     <!-- 表記を '市区町村別' に修正 -->
                     <span id="label-municipality" class="text-sm font-bold text-blue-400 mr-2 transition-colors duration-200">市区町村別</span>
-                    <label for="toggle-mode" class="flex items-center cursor-pointer">
+                    <label for="toggle-mode" class="flex items-center cursor-pointer" title="表示する地域の粒度を「市区町村別」と「観測点別」で切り替えます">
                         <div class="relative">
                             <!-- 初期状態: municipality (市区町村別) なので unchecked -->
                             <input type="checkbox" id="toggle-mode" class="sr-only">
@@ -321,6 +321,7 @@
                 <div class="flex flex-col justify-center space-y-0.5 w-full">
                     <!-- 自動ページ送りコントロール -->
                     <div id="autoplay-controls" class="flex items-center space-x-2" style="display: none;">
+                        <!-- 表示時間とループ回数 -->
                         <div class="flex items-center space-x-1">
                             <input type="number" id="autoplay-duration" value="10" min="1" class="autoplay-input w-12 text-center text-sm p-1">
                             <span class="text-xs text-gray-400">秒</span>
@@ -334,37 +335,39 @@
                     </div>
 
                     <!-- ナビゲーションボタン -->
+                    <!-- 前へ/次へボタンとページ情報 -->
                     <div id="shindo-nav" class="flex items-center justify-between" style="display: none;">
                         <div class="flex items-center space-x-1">
-                            <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <button id="shindo-prev" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed" title="前のページへ">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                             </button>
                             <span id="shindo-page-info" class="text-sm text-gray-400 font-mono w-20 text-center"></span>
-                            <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <button id="shindo-next" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed" title="次のページへ">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </button>
                         </div>
-                        <button id="autoplay-toggle" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600">
+                        <button id="autoplay-toggle" class="text-white hover:text-blue-300 transition p-1 rounded-full bg-gray-700 hover:bg-gray-600" title="自動ページ送りを再生/停止">
                             <!-- 再生アイコン -->
                             <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
-                            <!-- 一時停止アイコン -->
-                            <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z"></path></svg>
+                            <!-- 停止アイコン -->
+                            <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3.75A1.75 1.75 0 016.75 2h6.5A1.75 1.75 0 0115 3.75v12.5A1.75 1.75 0 0113.25 18h-6.5A1.75 1.75 0 015 16.25V3.75z"></path></svg>
                         </button>
                     </div>
 
                     <!-- トランジション設定 -->
-                    <div id="transition-controls" class="flex items-center space-x-2" style="display: none;">
+                    <!-- カット/スライド選択とリセットボタン -->
+                    <div id="transition-controls" class="flex items-center space-x-2" style="display: none;" title="ページの切り替え効果を選択します">
                         <select id="transition-effect" class="autoplay-input text-sm p-1">
                             <option value="cut" selected>カット</option>
                             <option value="slide">スライド</option>
                         </select>
                         <!-- 表示リセットボタンをトランジション設定の隣に移動 -->
-                        <button id="reset-display-button" class="bg-red-900 hover:bg-red-800 text-white font-semibold py-1 px-4 rounded-lg shadow transition duration-150 text-sm" style="display: none;">
+                        <button id="reset-display-button" class="bg-red-900 hover:bg-red-800 text-white font-semibold py-1 px-4 rounded-lg shadow transition duration-150 text-sm" style="display: none;" title="表示をリセットします">
                             リセット
                         </button>
                     </div>
                 </div>
-                <button id="shortcut-settings-button" class="absolute top-1 right-1 p-1 text-gray-400 hover:text-white transition">
+                <button id="shortcut-settings-button" class="absolute top-1 right-1 p-1 text-gray-400 hover:text-white transition" title="再生/一時停止のショートカットキーを設定します">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </button>
             </div>
@@ -1341,20 +1344,24 @@
          * 表示リセットボタンのセットアップ
          */
         const setupResetButton = () => {
-            const resetButton = document.getElementById('reset-display-button');
-            resetButton.addEventListener('click', () => {
-                // 1. 自動再生を停止し、UIをリセット
-                pauseAutoplay(true); // skipRedraw = true
+            document.getElementById('reset-display-button').addEventListener('click', stopAndResetDisplay);
+        };
 
-                // 2. 表示エリアをクリア
-                document.getElementById('content-line-1').textContent = '';
-                document.getElementById('content-line-2').textContent = '';
-                document.getElementById('current-shindo-label').classList.add('hidden');
+        /**
+         * 再生を停止し、表示をリセットする共通関数
+         */
+        const stopAndResetDisplay = () => {
+            // 1. 自動再生を停止し、UIをリセット
+            pauseAutoplay(true); // skipRedraw = true
 
-                // 3. ページインデックスをリセット
-                CURRENT_SHINDO_INDEX = 0;
-                updateNavControls({}, null); // ページ番号表示などをリセット
-            });
+            // 2. 表示エリアをクリア
+            document.getElementById('content-line-1').textContent = '';
+            document.getElementById('content-line-2').textContent = '';
+            document.getElementById('current-shindo-label').classList.add('hidden');
+
+            // 3. ページインデックスをリセット
+            CURRENT_SHINDO_INDEX = 0;
+            updateNavControls({}, null); // ページ番号表示などをリセット
         };
 
         /**
@@ -1484,7 +1491,7 @@
 
             toggleButton.addEventListener('click', () => {
                 if (isAutoplaying) {
-                    pauseAutoplay();
+                    stopAndResetDisplay(); // 動作を「停止してリセット」に変更
                 } else {
                     startAutoplay();
                 }
