@@ -651,7 +651,7 @@
             const tsunamiInfo = getTsunamiInfo(detailedTsunamiGrade);
 
             // レポートに基づきマグニチュードの取得方法を修正
-            const magValue = earthquake.earthquake?.hypocenter?.magnitude?.value;
+            const magValue = earthquake.earthquake?.magnitude;
             const magnitudeDisplay = (magValue !== undefined && magValue !== null && !isNaN(magValue)) 
                 ? parseFloat(magValue).toFixed(1) 
                 : '不明';
