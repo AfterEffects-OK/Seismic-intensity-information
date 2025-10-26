@@ -1490,35 +1490,6 @@
             });
         };
 
-        /**
-         * 自動ページ送り機能のセットアップ
-         */
-        const setupAutoplayControls = () => {
-            const toggleButton = document.getElementById('autoplay-toggle');
-            const loopsSelect = document.getElementById('autoplay-loops');
-
-            // ループ回数の選択肢を生成
-            for (let i = 1; i <= 10; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                loopsSelect.appendChild(option);
-            }
-            const infiniteOption = document.createElement('option');
-            infiniteOption.value = 'Infinity';
-            infiniteOption.textContent = '∞';
-            loopsSelect.appendChild(infiniteOption);
-            loopsSelect.value = '3'; // デフォルトを3回に変更
-
-            toggleButton.addEventListener('click', () => {
-                if (isAutoplaying) {
-                    pauseAutoplay();
-                } else {
-                    startAutoplay();
-                }
-            });
-        };
-
         const startAutoplay = async () => {
             if (isAutoplaying || FIXED_BAR_VIEWS.length <= 1) return;
 
