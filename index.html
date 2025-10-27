@@ -1625,7 +1625,7 @@
             document.getElementById('animation-wrapper').className = 'flex items-center w-full h-full';
 
             // APIの自動更新を再開
-            if (!refreshIntervalId) {
+            if (!refreshIntervalId && CONFIG.REFRESH_INTERVAL_MS > 0) {
                 refreshIntervalId = setInterval(refreshData, CONFIG.REFRESH_INTERVAL_MS);
                 console.log('ループ再生終了のため、API自動更新を再開します。');
             }
