@@ -728,14 +728,14 @@
          * @param {string} mode - 'point' (観測点別) または 'municipality' (市区町村別)
          * @returns {Array} 震度別・モード別にグループ化されたデータ
          */
-        const groupPointsByShindoAndMode = (rawPoints, mode, minScale) => {
+        const groupPointsByShindoAndMode = (rawPoints, mode) => {
             const shindoGroup = {}; 
 
             if (!rawPoints || !Array.isArray(rawPoints)) return [];
 
             rawPoints.forEach(point => {
-                // 指定された最低震度以上の観測点を含める
-                if (point.scale >= minScale) {
+                // 設定された最低震度以上の観測点を含める (例: 震度1以上)
+                if (point.scale >= CONFIG.MIN_DETAIL_SCALE) {
                     const shindoLabel = scaleToShindo(point.scale).label;
                     
                     let name;
@@ -813,7 +813,7 @@
             }
 
             // 現在のDISPLAY_MODEに基づいてデータをグループ化
-            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
+            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE);
 
             // 詳細セクションの震度別リストを生成
             const detailList = shindoByMode.map(item => `
@@ -1036,7 +1036,7 @@
             }
             
             const contentLine1 = document.getElementById('content-line-1');
-            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality', loopPlaybackMinScale);
+            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality');
             FIXED_BAR_VIEWS = []; 
 
             // --- 1. 概況ページの生成 (動的ページ分割) ---
@@ -1380,12 +1380,6 @@
          * キーボードショートカットを設定する
          */
         const setupKeyboardShortcuts = () => {
-            // 保存されたループ再生の最低震度を読み込む
-            const savedMinScale = localStorage.getItem('loopPlaybackMinScale');
-            if (savedMinScale) {
-                loopPlaybackMinScale = parseInt(savedMinScale, 10);
-            }
-
             // 保存された設定を読み込む
             const savedShortcut = localStorage.getItem('autoplayShortcut');
             if (savedShortcut) {
@@ -1429,13 +1423,11 @@
             const closeXButton = document.getElementById('shortcut-modal-close-x');
             const input = document.getElementById('shortcut-modal-input');
             const saveButton = document.getElementById('shortcut-modal-save');
-            const minScaleSelect = document.getElementById('loop-min-shindo-select');
 
             openButton.addEventListener('click', () => {
                 modal.classList.remove('hidden');
                 // 現在の設定値をUIに反映
                 input.value = formatShortcutText(shortcutSetting);
-                minScaleSelect.value = loopPlaybackMinScale;
                 input.focus();
             });
 
@@ -1463,8 +1455,6 @@
             saveButton.addEventListener('click', () => {
                 // 設定を保存
                 localStorage.setItem('autoplayShortcut', JSON.stringify(shortcutSetting));
-                loopPlaybackMinScale = parseInt(minScaleSelect.value, 10);
-                localStorage.setItem('loopPlaybackMinScale', loopPlaybackMinScale);
                 closeModal();
             });
         };
@@ -1754,28 +1744,9 @@
     <!-- ショートカット設定モーダル -->
     <div id="shortcut-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md relative">
-            <h3 class="text-xl font-bold mb-6">設定</h3>
-            <div class="space-y-6">
-                <div>
-                    <label for="shortcut-modal-input" class="block text-sm font-medium text-gray-300 mb-1">再生/停止ショートカット</label>
-                    <p class="text-xs text-gray-400 mb-2">下の入力欄を選択し、設定したいキーの組み合わせを押してください。</p>
-                    <input type="text" id="shortcut-modal-input" readonly class="w-full p-2 border rounded-md text-center text-lg font-mono">
-                </div>
-                <div>
-                    <label for="loop-min-shindo-select" class="block text-sm font-medium text-gray-300 mb-1">ループ再生に含める最低震度</label>
-                    <select id="loop-min-shindo-select" class="w-full p-2 border rounded-md text-white" style="background-color: #1f2937; border-color: #4b5563;">
-                        <option value="10">震度1以上</option>
-                        <option value="20">震度2以上</option>
-                        <option value="30" selected>震度3以上</option>
-                        <option value="40">震度4以上</option>
-                        <option value="45">震度5弱以上</option>
-                        <option value="50">震度5強以上</option>
-                        <option value="55">震度6弱以上</option>
-                        <option value="60">震度6強以上</option>
-                        <option value="70">震度7</option>
-                    </select>
-                </div>
-            </div>
+            <h3 class="text-lg font-bold mb-4">再生/停止ショートカット設定</h3>
+            <p class="text-sm text-gray-400 mb-2">下の入力欄を選択し、設定したいキーの組み合わせを押してください。</p>
+            <input type="text" id="shortcut-modal-input" readonly class="w-full p-2 border rounded-md text-center text-lg font-mono">
             <div class="flex justify-end mt-6 space-x-3">
                 <button id="shortcut-modal-close" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition">
                     キャンセル
