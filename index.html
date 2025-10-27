@@ -1022,7 +1022,7 @@
             const summaryTexts = [];
 
             // 1. 地震発生情報
-            summaryTexts.push(`${timePart}に${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`);
+            summaryTexts.push(`${timePart}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`);
 
             // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
@@ -1059,16 +1059,16 @@
                 let tsunamiMessage = '';
                 switch (eq.tsunamiLabel) {
                     case '大津波警報':
-                        tsunamiMessage = '大津波警報を発表中です。';
+                        tsunamiMessage = 'この地震で 大津波警報 が発表されています';
                         break;
                     case '津波警報':
-                        tsunamiMessage = '津波警報を発表中です。';
+                        tsunamiMessage = 'この地震で 津波警報 が発表されています';
                         break;
                     case '津波注意報':
-                        tsunamiMessage = '津波注意報を発表中です。';
+                        tsunamiMessage = 'この地震で 津波注意報 が発表されています';
                         break;
                     case '津波なし':
-                        tsunamiMessage = 'この地震による津波の心配はありません。';
+                        tsunamiMessage = 'この地震による津波の心配はありません';
                         break;
                 }
                 if (tsunamiMessage) {
