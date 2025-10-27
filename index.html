@@ -728,14 +728,14 @@
          * @param {string} mode - 'point' (観測点別) または 'municipality' (市区町村別)
          * @returns {Array} 震度別・モード別にグループ化されたデータ
          */
-        const groupPointsByShindoAndMode = (rawPoints, mode) => {
+        const groupPointsByShindoAndMode = (rawPoints, mode, minScale) => {
             const shindoGroup = {}; 
 
             if (!rawPoints || !Array.isArray(rawPoints)) return [];
 
             rawPoints.forEach(point => {
-                // 設定された最低震度以上の観測点を含める (例: 震度1以上)
-                if (point.scale >= CONFIG.MIN_DETAIL_SCALE) {
+                // 指定された最低震度以上の観測点を含める
+                if (point.scale >= minScale) {
                     const shindoLabel = scaleToShindo(point.scale).label;
                     
                     let name;
@@ -813,7 +813,7 @@
             }
 
             // 現在のDISPLAY_MODEに基づいてデータをグループ化
-            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE);
+            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
 
             // 詳細セクションの震度別リストを生成
             const detailList = shindoByMode.map(item => `
@@ -1036,7 +1036,7 @@
             }
             
             const contentLine1 = document.getElementById('content-line-1');
-            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality');
+            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality', CONFIG.MIN_LIST_SCALE);
             FIXED_BAR_VIEWS = []; 
 
             // --- 1. 概況ページの生成 (動的ページ分割) ---
