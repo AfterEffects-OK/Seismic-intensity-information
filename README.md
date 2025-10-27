@@ -19,7 +19,7 @@
 
 ### 3.1. 地震一覧パネル（左側）
 
-<img src="https://i.imgur.com/2sL7XgW.png" alt="地震一覧パネル" width="400"/>
+<img src="[https://i.imgur.com/2sL7XgW.png](https://github.com/AfterEffects-OK/Seismic-intensity-information/blob/main/%E5%9C%B0%E9%9C%87%E4%B8%80%E8%A6%A7%EF%BC%88%E5%B7%A6%E5%81%B4%EF%BC%89.png?raw=true)" alt="地震一覧パネル" width="400"/>
 
 | UI要素 | 機能説明 |
 | :--- | :--- |
