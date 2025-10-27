@@ -1,4 +1,5 @@
 # 地震情報トラッカー 仕様書・操作マニュアル
+https://docs.google.com/document/d/1jtBsx9j4b-LBjn5z0lg11gopZJYPya7-DlG6tJD1WEk/edit?usp=sharing
 
 ## 1. アプリケーション概要
 
