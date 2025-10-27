@@ -30,7 +30,7 @@
 
 ### 3.2. 地震詳細パネル（右側）
 
-<img src="https://i.imgur.com/j1v2XhO.png" alt="地震詳細パネル" width="600"/>
+<img src="地震詳細（右側）.png" alt="地震詳細パネル" width="600"/>
 
 | UI要素 | 機能説明 |
 | :--- | :--- |
@@ -43,7 +43,7 @@
 
 選択した地震の情報を、配信テロップのように1ページずつ表示・再生するための機能です。
 
-<img src="https://i.imgur.com/u15y3kH.png" alt="情報表示バー" width="800"/>
+<img src="固定表示（下側）.png" alt="情報表示バー" width="800"/>
 
 #### 操作パネル（左側）
 
@@ -67,7 +67,7 @@
 
 ### 3.4. 設定モーダル
 
-<img src="https://i.imgur.com/4W2t447.png" alt="設定モーダル" width="400"/>
+<img src="設定モーダル.png" alt="設定モーダル" width="400"/>
 
 | UI要素 | 機能説明 |
 | :--- | :--- |
