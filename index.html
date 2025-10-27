@@ -423,14 +423,14 @@
             // 地震一覧に表示する地震の「最大」震度の最低ライン (30: 震度3)
             MIN_LIST_SCALE: 30,
             
-            // 詳細パネルの震度別観測地点に表示する「観測点」の最低震度ライン (30: 震度3)
-            MIN_DETAIL_SCALE: 30,
+            // 詳細パネルの震度別観測地点に表示する「観測点」の最低震度ライン (10: 震度1)
+            MIN_DETAIL_SCALE: 10,
 
             // 固定バーの1ページあたりに表示する市区町村の最大数
             CITIES_PER_PAGE: 15,
 
-            // APIを自動更新する間隔（ミリ秒）。30分 = 1800000ms
-            REFRESH_INTERVAL_MS: 30 * 60 * 1000,
+            // APIを自動更新する間隔（ミリ秒）。2分 = 120000ms
+            REFRESH_INTERVAL_MS: 2 * 60 * 1000,
         };
 
         /**
@@ -730,8 +730,8 @@
             if (!rawPoints || !Array.isArray(rawPoints)) return [];
 
             rawPoints.forEach(point => {
-                // 震度3以上の観測点を含める
-                if (point.scale >= CONFIG.MIN_DETAIL_SCALE) { 
+                // 設定された最低震度以上の観測点を含める (例: 震度1以上)
+                if (point.scale >= CONFIG.MIN_DETAIL_SCALE) {
                     const shindoLabel = scaleToShindo(point.scale).label;
                     
                     let name;
@@ -959,6 +959,9 @@
             const buttonTextSpan = document.getElementById('refresh-text');
             const fetchTimeDisplay = document.getElementById('fetch-time-display');
             
+            // 更新前の最新地震IDを保持
+            const latestIdBefore = PROCESSED_EARTHQUAKES.length > 0 ? PROCESSED_EARTHQUAKES[0].id : null;
+
             if (!refreshButton || !buttonTextSpan || !fetchTimeDisplay) return;
 
             // 1. Loading/Disable state
@@ -971,6 +974,13 @@
             // 2. Fetch and Display
             const earthquakes = await fetchEarthquakeData();
             displayEarthquakes(earthquakes);
+
+            // 3. 新しい地震が検知されたかチェックし、自動再生を開始
+            const latestIdAfter = earthquakes.length > 0 ? earthquakes[0].id : null;
+            if (latestIdAfter && latestIdAfter !== latestIdBefore && !isAutoplaying) {
+                console.log('新しい地震を検知しました。自動再生を開始します。');
+                startAutoplay();
+            }
             
             // 3. API取得に成功し、UIが更新された場合（エラーメッセージが表示されていない場合）のみ、取得日時を更新
             const isErrorDisplayed = !document.getElementById('error-message').classList.contains('hidden');
