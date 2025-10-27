@@ -1044,11 +1044,23 @@
             FIXED_BAR_VIEWS = []; 
 
             // --- 1. 概況ページの生成 (動的ページ分割) ---
-            const timePart = eq.time.split(' ')[1];
             const summaryTexts = [];
 
             // 1. 地震発生情報
-            summaryTexts.push(`${timePart}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震がありました`);
+            const [datePart, timePart] = eq.time.split(' '); // "YYYY/MM/DD", "HH:mm"
+            const today = new Date();
+            const eqDate = new Date(datePart);
+
+            let displayTime;
+            if (today.getFullYear() === eqDate.getFullYear() &&
+                today.getMonth() === eqDate.getMonth() &&
+                today.getDate() === eqDate.getDate()) {
+                displayTime = timePart; // 今日の場合は時刻のみ
+            } else {
+                const [_, month, day] = datePart.split('/');
+                displayTime = `${parseInt(month, 10)}月${parseInt(day, 10)}日 ${timePart}`; // 今日でない場合は日付も表示
+            }
+            summaryTexts.push(`${displayTime}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震がありました`);
 
             // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
