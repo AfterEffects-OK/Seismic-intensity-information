@@ -1469,6 +1469,17 @@
                 localStorage.setItem('autoplayShortcut', JSON.stringify(shortcutSetting));
                 loopPlaybackMinScale = parseInt(minScaleSelect.value, 10);
                 localStorage.setItem('loopPlaybackMinScale', loopPlaybackMinScale);
+
+                // 現在選択されている地震の表示を新しい設定で更新する
+                if (selectedCardId) {
+                    const eventId = selectedCardId.substring(5); // "card-"を削除
+                    const eqData = PROCESSED_EARTHQUAKES.find(eq => eq.id === eventId);
+                    if (eqData) {
+                        // 新しい設定で固定バーのビューを再生成
+                        updateFixedShindoBar(eqData);
+                    }
+                }
+
                 closeModal();
             });
         };
