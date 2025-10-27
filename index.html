@@ -401,6 +401,7 @@
         let autoplayIntervalId = null;
         let isAutoplaying = false;
         let autoplayLoopCounter = 0;
+        let refreshIntervalId = null; // 自動更新のタイマーIDを保持
         // ------------------------------------
 
         // --- ショートカットキー用のグローバル変数 ---
@@ -959,8 +960,8 @@
             const buttonTextSpan = document.getElementById('refresh-text');
             const fetchTimeDisplay = document.getElementById('fetch-time-display');
             
-            // 更新前の最新地震IDを保持
-            const latestIdBefore = PROCESSED_EARTHQUAKES.length > 0 ? PROCESSED_EARTHQUAKES[0].id : null;
+            // 更新前の地震IDリストを保持
+            const idsBefore = PROCESSED_EARTHQUAKES.map(eq => eq.id).sort();
 
             if (!refreshButton || !buttonTextSpan || !fetchTimeDisplay) return;
 
@@ -975,11 +976,16 @@
             const earthquakes = await fetchEarthquakeData();
             displayEarthquakes(earthquakes);
 
-            // 3. 新しい地震が検知されたかチェックし、自動再生を開始
-            const latestIdAfter = earthquakes.length > 0 ? earthquakes[0].id : null;
-            if (latestIdAfter && latestIdAfter !== latestIdBefore && !isAutoplaying) {
-                console.log('新しい地震を検知しました。自動再生を開始します。');
-                startAutoplay();
+            // 3. 地震データに変化があったかチェックし、自動再生を開始
+            const idsAfter = earthquakes.map(eq => eq.id).sort();
+            const hasChanged = JSON.stringify(idsBefore) !== JSON.stringify(idsAfter);
+
+            if (hasChanged && !isAutoplaying) {
+                // 新しい地震がリストの先頭に来るように、displayEarthquakesがソートしていることを前提とする
+                if (earthquakes.length > 0) {
+                    console.log('新しい地震データを検知しました。自動再生を開始します。');
+                    startAutoplay();
+                }
             }
             
             // 3. API取得に成功し、UIが更新された場合（エラーメッセージが表示されていない場合）のみ、取得日時を更新
@@ -1501,6 +1507,13 @@
         const startAutoplay = async () => {
             if (isAutoplaying || FIXED_BAR_VIEWS.length <= 1) return;
 
+            // APIの自動更新を一時停止
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+                refreshIntervalId = null;
+                console.log('ループ再生開始のため、API自動更新を一時停止します。');
+            }
+
             const durationInput = document.getElementById('autoplay-duration');
             const loopsSelect = document.getElementById('autoplay-loops');
             const playIcon = document.getElementById('play-icon');
@@ -1611,6 +1624,12 @@
             // アニメーションクラスが残っている場合があるので削除
             document.getElementById('animation-wrapper').className = 'flex items-center w-full h-full';
 
+            // APIの自動更新を再開
+            if (!refreshIntervalId) {
+                refreshIntervalId = setInterval(refreshData, CONFIG.REFRESH_INTERVAL_MS);
+                console.log('ループ再生終了のため、API自動更新を再開します。');
+            }
+
             if (skipRedraw) return;
 
             // 停止時に現在のインデックスの表示に戻す
@@ -1710,7 +1729,7 @@
             await refreshData();
 
             // 定期的な自動更新を設定
-            setInterval(refreshData, CONFIG.REFRESH_INTERVAL_MS);
+            refreshIntervalId = setInterval(refreshData, CONFIG.REFRESH_INTERVAL_MS);
         };
     </script>
 
