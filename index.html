@@ -1048,12 +1048,12 @@
             const summaryTexts = [];
 
             // 1. 地震発生情報
-            summaryTexts.push(`${timePart}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震が発生しました`);
+            summaryTexts.push(`${timePart}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震がありました`);
 
             // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
                 const depthText = eq.depth >= 0 ? `およそ${eq.depth}km　` : '不明';
-                const magnitudeText = `地震の規模(マグニチュード)は${eq.magnitude}です`;
+                const magnitudeText = `地震の規模は マグニチュード${eq.magnitude}`;
                 summaryTexts.push(`震源の深さは${depthText}${magnitudeText}`);
             }
 
@@ -1601,7 +1601,7 @@
 
                             // 終了ページを表示
                             const endView = {
-                                type: 'system', shindo: '情報', line1: '地震情報　おわり', line2: '',
+                                type: 'system', shindo: '情報', line1: '地震情報　終', line2: '',
                                 shindoClass: 'bg-blue-600 text-white', pageCurrent: '■', pageTotal: ''
                             };
                             updateFixedBarDisplay(endView);
@@ -1773,11 +1773,11 @@
             <div class="space-y-6">
                 <div>
                     <label for="shortcut-modal-input" class="block text-sm font-medium text-gray-300 mb-1">再生/停止ショートカット</label>
-                    <p class="text-xs text-gray-400 mb-2">下の入力欄を選択し、設定したいキーの組み合わせを押してください。</p>
+                    <p class="text-xs text-gray-400 mb-2">下の入力欄を選択し、設定したいキーの組み合わせを押してください</p>
                     <input type="text" id="shortcut-modal-input" readonly class="w-full p-2 border rounded-md text-center text-lg font-mono">
                 </div>
                 <div>
-                    <label for="loop-min-shindo-select" class="block text-sm font-medium text-gray-300 mb-1">ループ再生に含める最低震度</label>
+                    <label for="loop-min-shindo-select" class="block text-sm font-medium text-gray-300 mb-1">情報画面に表示する最低震度</label>
                     <select id="loop-min-shindo-select" class="w-full p-2 border rounded-md text-white" style="background-color: #1f2937; border-color: #4b5563;">
                         <option value="10">震度1以上</option>
                         <option value="20">震度2以上</option>
