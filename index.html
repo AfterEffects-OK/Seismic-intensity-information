@@ -956,6 +956,9 @@
          * データを手動で更新する（API呼び出しとUI再描画）
          */
         const refreshData = async () => {
+            // ループ再生中はAPIの自動更新をスキップする
+            if (isAutoplaying) return;
+
             const refreshButton = document.getElementById('refresh-button');
             const buttonTextSpan = document.getElementById('refresh-text');
             const fetchTimeDisplay = document.getElementById('fetch-time-display');
