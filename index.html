@@ -851,7 +851,7 @@
                 <div class="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm text-gray-300 border-b border-gray-700 pb-4">
                     <p><strong>発生日時:</strong> ${eq.time}</p>
                     <p><strong>マグニチュード:</strong> M${eq.magnitude}</p>
-                    <p><strong>震源の深さ:</strong> ${eq.depth >= 0 ? `約${eq.depth}km` : '不明'}</p>
+                    <p><strong>震源の深さ:</strong> ${eq.depth === 0 ? 'ごく浅い' : (eq.depth > 0 ? `約${eq.depth}km` : '不明')}</p>
                     <p><strong>津波の有無:</strong> 
                         ${(() => {
                             switch (eq.tsunamiLabel) {
@@ -977,10 +977,8 @@
 
             // 1. Loading/Disable state
             refreshButton.disabled = true;
-            // animate-pulse を追加して、アイコンがない代わりに点滅でロード中であることを示す
-            refreshButton.classList.add('opacity-50', 'cursor-not-allowed', 'animate-pulse'); 
+            refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
             const originalText = buttonTextSpan.textContent;
-            buttonTextSpan.textContent = '取得中...'; // テキストを変更
 
             // 2. Fetch and Display
             const earthquakes = await fetchEarthquakeData();
@@ -1009,7 +1007,6 @@
             }
 
             // 4. Complete state
-            refreshButton.classList.remove('animate-pulse'); // アニメーションを停止
             buttonTextSpan.textContent = '更新完了!'; // 一時的に更新完了を表示
 
             // 5. Re-enable and reset text
@@ -1017,7 +1014,7 @@
                 buttonTextSpan.textContent = originalText; // 元のテキストに戻す ('API更新')
                 refreshButton.disabled = false;
                 refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }, 1000); 
+            }, 1000);
         };
 
 
@@ -1064,7 +1061,7 @@
 
             // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
-                const depthText = eq.depth >= 0 ? `およそ${eq.depth}km　` : '不明';
+                const depthText = eq.depth === 0 ? 'ごく浅い　' : (eq.depth > 0 ? `およそ${eq.depth}km　` : '不明');
                 const magnitudeText = `地震の規模は マグニチュード${eq.magnitude}`;
                 summaryTexts.push(`震源の深さは${depthText}${magnitudeText}`);
             }
@@ -1542,7 +1539,7 @@
 
             toggleButton.addEventListener('click', () => {
                 if (isAutoplaying) {
-                    stopAndResetDisplay(); // 動作を「停止してリセット」に変更
+                    pauseAutoplay(true); // 動作を「停止してリセット」に変更
                 } else {
                     startAutoplay();
                 }
