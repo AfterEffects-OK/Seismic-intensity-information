@@ -426,7 +426,7 @@
 
         const CONFIG = {
             // P2P地震情報 API v2のエンドポイント (地震情報コード551は「震源・震度情報」)
-            API_URL: 'https://api.p2pquake.net/v2/history?limit=100&',
+            API_URL: 'https://api.p2pquake.net/v2/history',
             
             // 地震一覧に表示する地震の「最大」震度の最低ライン (30: 震度3)
             MIN_LIST_SCALE: 30,
@@ -606,7 +606,7 @@
             
             try {
                 // APIからまとめてデータを取得
-                const response = await fetch(`${CONFIG.API_URL}&codes=551,552,556`);
+                const response = await fetch(`${CONFIG.API_URL}?limit=100&codes=551,552,556`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error: ${response.status}`);
@@ -662,12 +662,12 @@
                 const uniqueEarthquakes = Array.from(earthquakeMap.values());
 
                 // 処理済みのデータセットをグローバル変数に格納
-                PROCESSED_EARTHQUAKES = await Promise.all(uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap)));
+                PROCESSED_EARTHQUAKES = await Promise.all(uniqueEarthquakes.map(async eq => processEarthquake(eq, tsunamiDetailsMap)));
 
                 // 新しい地震データをスプレッドシートに記録
                 if (PROCESSED_EARTHQUAKES.length > 0) {
-                    logToSpreadsheet(PROCESSED_EARTHQUAKES);
-                    logPointsToSpreadsheet(PROCESSED_EARTHQUAKES); // 渡すデータは整形後のPROCESSED_EARTHQUAKES
+                    await logToSpreadsheet(PROCESSED_EARTHQUAKES);
+                    await logPointsToSpreadsheet(PROCESSED_EARTHQUAKES);
                 }
                 return PROCESSED_EARTHQUAKES;
 
@@ -749,9 +749,15 @@
          * @param {Object} earthquake - APIから取得した単一の地震情報オブジェクト
          * @returns {Object} 処理後の整形済み地震情報
          */
-        const processEarthquake = (earthquake, tsunamiDetailsMap) => {
-            // 地震イベントID(eventid)を主キーとする。
-            const eventId = String(earthquake.issue?.eventid || earthquake.issue?.event_id || earthquake.issue?.id);
+        const processEarthquake = async (earthquake, tsunamiDetailsMap) => {
+            // --- 安定したID生成ロジック ---
+            const eqData = earthquake.earthquake;
+            const idSource = `${eqData.time}_${eqData.hypocenter.name}`; // 発生時刻と震源地名からIDを生成
+            const syntheticId = await digestMessage(idSource);
+            // -------------------------
+
+            // API提供のeventidは津波情報の紐付けにのみ利用
+            const eventId = String(earthquake.issue?.eventid || earthquake.issue?.event_id);
 
             const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
 
