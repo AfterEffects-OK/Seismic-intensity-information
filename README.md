@@ -45,7 +45,7 @@ https://aftereffects-ok.github.io/Seismic-intensity-information/
 
 選択した地震の情報を、配信テロップのように1ページずつ表示・再生するための機能です。
 
-<img src="固定表示エリア（下側）.png" alt="情報表示バー" width="800"/>
+<img src="固定表示（下側）.png" alt="情報表示バー" width="800"/>
 
 #### 操作パネル（左側）
 
