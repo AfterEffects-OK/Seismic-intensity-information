@@ -590,33 +590,47 @@
             errorElement.classList.add('hidden');
             
             try {
-                // APIからまとめてデータを取得
-                const response = await fetch(`${CONFIG.API_URL}&codes=551,552`);
+                // 震度情報(551)と津波情報(552)を別々にリクエスト
+                const url551 = `${CONFIG.API_URL}&codes=551`;
+                const url552 = `${CONFIG.API_URL}&codes=552`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTPエラー: ${response.status}`);
+                const [response551, response552] = await Promise.all([
+                    fetch(url551),
+                    fetch(url552)
+                ]);
+
+                if (!response551.ok) {
+                    throw new Error(`HTTPエラー (震度情報): ${response551.status}`);
+                }
+                if (!response552.ok) {
+                    throw new Error(`HTTPエラー (津波情報): ${response552.status}`);
                 }
                 
-                const data = await response.json();
+                const data551 = await response551.json();
+                const data552 = await response552.json();
+                const data = [...data551, ...data552];
 
-                // --- 1. 津波情報を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
+                // --- 1. 津波情報(552)を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
                 const tsunamiDetailsMap = new Map();
-                data.filter(d => d.code === 552).forEach(info => {
+                const tsunamiInfos = data.filter(d => d.code === 552);
+
+                tsunamiInfos.forEach(info => { // 552: 津波情報
                     const eventId = info.issue?.event_id;
                     if (!eventId || !info.tsunami?.forecasts) return;
 
-                    const grades = info.tsunami.forecasts.map(f => f.grade);
+                    const grades = info.tsunami.forecasts.map(f => f.grade); // ["Warning", "Advisory"]
                     let highestGrade = 'None';
                     if (grades.includes('MajorWarning')) highestGrade = 'MajorWarning';
                     else if (grades.includes('Warning')) highestGrade = 'Warning';
                     else if (grades.includes('Advisory')) highestGrade = 'Advisory';
 
+                    // 既に登録されている情報より高いレベルの警報があれば更新
                     tsunamiDetailsMap.set(String(eventId), highestGrade);
                 });
 
-                // --- 2. 地震情報を eventid を主キーとして重複排除・集約 ---
+                // 最大震度3以上の地震のみをフィルタリング (CONFIG.MIN_LIST_SCALEを使用)
                 const filteredEarthquakes = data.filter(eq => 
-                    eq.code === 551 && eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
+                    eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
                 );
 
                 const eventMap = new Map();
@@ -663,12 +677,13 @@
                 const uniqueEarthquakes = Array.from(eventMap.values());
 
                 // 処理済みのデータセットをグローバル変数に格納
+                // ここでは描画モードに関わらず、全ての情報を保持
                 PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap));
 
                 // 新しい地震データをスプレッドシートに記録
                 if (PROCESSED_EARTHQUAKES.length > 0) {
                     logToSpreadsheet(PROCESSED_EARTHQUAKES);
-                    logPointsToSpreadsheet(PROCESSED_EARTHQUAKES);
+                    logPointsToSpreadsheet(PROCESSED_EARTHQUAKES); // 渡すデータは整形後のPROCESSED_EARTHQUAKES
                 }
                 return PROCESSED_EARTHQUAKES;
 
@@ -721,7 +736,7 @@
             // 全ての地震から観測点データ（points）をフラットな配列に変換する
             const allPoints = [];
             earthquakes.forEach(eq => {
-                if (eq.points && Array.isArray(eq.points)) {
+                if (eq.points && Array.isArray(eq.points)) { // 整形後のデータには 'points' がある
                     eq.points.forEach(point => {
                         // 各観測点データに、関連する地震IDを追加する
                         allPoints.push({ ...point, earthquakeId: eq.id });
@@ -738,7 +753,7 @@
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(allPoints)
-                ]);
+                });
                 console.log('観測点情報のスプレッドシートへの記録リクエストを送信しました。');
             } catch (error) {
                 console.error('観測点情報の記録中にエラーが発生しました:', error);
@@ -752,6 +767,7 @@
          */
         const processEarthquake = (earthquake, tsunamiDetailsMap) => {
             // 地震イベントID(eventid)を主キーとする。
+            // 存在しない場合は、情報ID(id)で代替する。
             const eventId = String(earthquake.issue?.eventid || earthquake.issue?.event_id || earthquake.issue?.id);
 
             const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
@@ -793,7 +809,7 @@
                 maxShindoLabel: scaleToShindo(earthquake.earthquake.maxScale).label,
                 maxShindoClass: scaleToShindo(earthquake.earthquake.maxScale).class,
                 maxScale: earthquake.earthquake.maxScale, // 最大震度を数値で保持
-                rawPoints: earthquake.points, // 生の観測点データを保持
+                points: earthquake.points, // 生の観測点データを保持
             };
         };
 
@@ -896,7 +912,7 @@
             const detailContainer = document.getElementById('detail-content');
             
             // データ存在の防御的チェック
-            if (!eq || !eq.rawPoints) {
+            if (!eq || !eq.points) {
                  // ダークモード対応: text-gray-500 -> text-gray-400
                  detailContainer.innerHTML = `
                     <div class="text-center p-8 text-gray-400">
@@ -904,14 +920,14 @@
                         <p>この地震の詳細データは読み込めませんでした。リストから再度選択してください。</p>
                     </div>
                 `;
-                console.error('Error: Earthquake data or rawPoints is missing.', eq);
+                console.error('Error: Earthquake data or points is missing.', eq);
                 // 固定バーもクリア
                 updateFixedShindoBar(null);
                 return;
             }
 
             // 現在のDISPLAY_MODEに基づいてデータをグループ化
-            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
+            const shindoByMode = groupPointsByShindoAndMode(eq.points, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
 
             // 詳細セクションの震度別リストを生成
             const detailList = shindoByMode.map(item => `
@@ -1121,7 +1137,7 @@
         const updateFixedShindoBar = (eq) => {
             const shindoNav = document.getElementById('shindo-nav');
 
-            if (!eq || !eq.rawPoints) {
+            if (!eq || !eq.points) {
                 // 初期状態 / データなし
                 FIXED_BAR_VIEWS = [];
                 shindoNav.style.display = 'none';
@@ -1131,7 +1147,7 @@
             }
             
             const contentLine1 = document.getElementById('content-line-1');
-            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality', loopPlaybackMinScale);
+            const shindoGroups = groupPointsByShindoAndMode(eq.points, 'municipality', loopPlaybackMinScale);
             FIXED_BAR_VIEWS = []; 
 
             // --- 1. 概況ページの生成 (動的ページ分割) ---
