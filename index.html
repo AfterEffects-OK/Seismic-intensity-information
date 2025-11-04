@@ -535,6 +535,28 @@
         };
 
         /**
+         * 時刻文字列 (HH:mm) を「午前/午後 X時Y分」形式に変換する
+         * @param {string} timeString - "HH:mm" 形式の時刻文字列
+         * @returns {string} フォーマットされた時刻文字列
+         */
+        const formatTimeForTelop = (timeString) => {
+            if (!timeString || !timeString.includes(':')) {
+                return '';
+            }
+            const [hour, minute] = timeString.split(':').map(num => parseInt(num, 10));
+
+            if (isNaN(hour) || isNaN(minute)) {
+                return '';
+            }
+
+            const ampm = hour < 12 ? '午前' : '午後';
+            const displayHour = hour % 12 === 0 ? (hour === 12 ? 12 : 0) : hour % 12;
+
+            return `${ampm} ${displayHour}時 ${minute}分`;
+        };
+
+
+        /**
          * 文字列からMD5ハッシュを生成する非同期関数
          * @param {string} message - ハッシュ化する文字列
          * @returns {Promise<string>} 16進数文字列のハッシュ
@@ -811,6 +833,21 @@
                 ? parseFloat(magValue).toFixed(1) 
                 : '不明';
 
+            // ★★★ 震度階級別に観測点をグループ化する処理を追加 ★★★
+            const shindoPoints = {
+                '70': [], '60': [], '55': [], '50': [], '45': [], '40': [], '30': [], '20': [], '10': []
+            };
+
+            if (earthquake.points && Array.isArray(earthquake.points)) {
+                earthquake.points.forEach(point => {
+                    // point.scale (e.g., 30) が shindoPoints のキーとして存在するかチェック
+                    if (shindoPoints.hasOwnProperty(point.scale)) {
+                        // 観測点名を該当する震度階級の配列に追加
+                        shindoPoints[point.scale].push(point.addr);
+                    }
+                });
+            }
+
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
                 id: syntheticId,
@@ -825,6 +862,7 @@
                 maxShindoClass: scaleToShindo(earthquake.earthquake.maxScale).class,
                 maxScale: earthquake.earthquake.maxScale, // 最大震度を数値で保持
                 points: earthquake.points, // 生の観測点データを保持
+                shindoPoints: shindoPoints, // ★★★ グループ化した観測点データを追加 ★★★
             };
         };
 
@@ -1164,55 +1202,48 @@
             const contentLine1 = document.getElementById('content-line-1');
             const shindoGroups = groupPointsByShindoAndMode(eq.points, 'municipality', loopPlaybackMinScale);
             FIXED_BAR_VIEWS = []; 
-
-            // --- 1. 概況ページの生成 (動的ページ分割) ---
-            const summaryTexts = [];
-
-            // 1. 地震発生情報
+            
+            // --- 1. 概況ページの生成 (指定箇所での分割ロジック) ---
             const [datePart, timePart] = eq.time.split(' '); // "YYYY/MM/DD", "HH:mm"
             const today = new Date();
             const eqDate = new Date(datePart);
-
             let displayTime;
+            const formattedTimeForTelop = formatTimeForTelop(timePart); // 「午前/午後 X時Y分」形式
+
             if (today.getFullYear() === eqDate.getFullYear() &&
                 today.getMonth() === eqDate.getMonth() &&
                 today.getDate() === eqDate.getDate()) {
-                displayTime = timePart; // 今日の場合は時刻のみ
+                displayTime = `${formattedTimeForTelop}ごろ`; // 今日の場合は時刻のみ
             } else {
                 const [_, month, day] = datePart.split('/');
-                displayTime = `${parseInt(month, 10)}月${parseInt(day, 10)}日 ${timePart}`; // 今日でない場合は日付も表示
+                displayTime = `${parseInt(month, 10)}月${parseInt(day, 10)}日 ${formattedTimeForTelop}ごろ`; // 今日でない場合は日付も表示
             }
-            summaryTexts.push(`${displayTime}に ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震がありました`);
 
-            // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
+            // 1-1. 地震発生情報のページ生成
+            const text1 = `${displayTime} ${eq.epicenter}を震源とする 最大${eq.maxShindoLabel}の地震がありました`;
+            if (!doesTextFitInTwoLines(text1, contentLine1)) {
+                const part1 = `${displayTime} ${eq.epicenter}を震源とする`;
+                const part2 = `最大${eq.maxShindoLabel}の地震がありました`;
+                FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: part1, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: part2, line2: '', shindoClass: 'bg-gray-500 text-white' });
+            } else {
+                FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: text1, line2: '', shindoClass: 'bg-gray-500 text-white' });
+            }
+
+            // 1-2. 震源・マグニチュード情報のページ生成
             if (eq.magnitude !== '不明') {
                 const depthText = eq.depth === 0 ? ' ごく浅い　' : (eq.depth > 0 ? `およそ${eq.depth}km　` : '不明');
                 const magnitudeText = `地震の規模は マグニチュード${eq.magnitude}`;
-                summaryTexts.push(`震源の深さは${depthText}${magnitudeText}`);
-            }
-
-            summaryTexts.forEach(text => {
-                if (!doesTextFitInTwoLines(text, contentLine1)) {
-                    // 2行に収まらない場合、単語（スペース区切り）で分割を試みる
-                    const words = text.split(' ');
-                    let currentPageText = '';
-                    for (let i = 0; i < words.length; i++) {
-                        const testText = currentPageText ? `${currentPageText} ${words[i]}` : words[i];
-                        if (!doesTextFitInTwoLines(testText, contentLine1)) {
-                            FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
-                            currentPageText = words[i];
-                        } else {
-                            currentPageText = testText;
-                        }
-                    }
-                    if (currentPageText) {
-                        FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: currentPageText, line2: '', shindoClass: 'bg-gray-500 text-white' });
-                    }
+                const text2 = `震源の深さは${depthText}${magnitudeText}`;
+                if (!doesTextFitInTwoLines(text2, contentLine1)) {
+                    const part1 = `震源の深さは${depthText.trim()}`;
+                    const part2 = magnitudeText;
+                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: part1, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: part2, line2: '', shindoClass: 'bg-gray-500 text-white' });
                 } else {
-                    // 2行に収まる場合はそのまま追加
-                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: text, line2: '', shindoClass: 'bg-gray-500 text-white' });
+                    FIXED_BAR_VIEWS.push({ type: 'summary', shindo: '概況', line1: text2, line2: '', shindoClass: 'bg-gray-500 text-white' });
                 }
-            });
+            }
 
             // 3. 津波情報 (利用可能な場合) - 概況ページが生成された後に挿入
             if (eq.tsunamiLabel) {
