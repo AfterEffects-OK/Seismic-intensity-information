@@ -721,8 +721,8 @@
             // 全ての地震から観測点データ（points）をフラットな配列に変換する
             const allPoints = [];
             earthquakes.forEach(eq => {
-                if (eq.rawPoints && Array.isArray(eq.rawPoints)) {
-                    eq.rawPoints.forEach(point => {
+                if (eq.points && Array.isArray(eq.points)) {
+                    eq.points.forEach(point => {
                         // 各観測点データに、関連する地震IDを追加する
                         allPoints.push({ ...point, earthquakeId: eq.id });
                     });
