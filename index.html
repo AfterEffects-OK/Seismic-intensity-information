@@ -439,6 +439,12 @@
 
             // APIを自動更新する間隔（ミリ秒）。2分 = 120000ms
             REFRESH_INTERVAL_MS: 2 * 60 * 1000,
+
+            // 【要設定】Google Apps ScriptのウェブアプリURL
+            GAS_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbycK2ARMIU1L3mKQYcvsDzCXYRpnOAbAvZmknDzk4cp3_H6gh7IoBkYJTVM3da5nWTi/exec', // ← 地震情報記録用
+
+            // 【要設定】観測点情報記録用のGoogle Apps ScriptウェブアプリURL
+            GAS_POINTS_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyKZMDItp342Im5b_PBvpp8X5ST3AH8Ltx6nxdwJiN-QnM9isxavmfKcKrClSzUYG1Dmg/exec', // ← ここに観測点情報用の新しいウェブアプリURLを貼り付けてください
         };
 
         /**
@@ -641,6 +647,12 @@
                 // 処理済みのデータセットをグローバル変数に格納
                 // ここでは描画モードに関わらず、全ての情報を保持
                 PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap));
+
+                // 新しい地震データをスプレッドシートに記録
+                if (PROCESSED_EARTHQUAKES.length > 0) {
+                    logToSpreadsheet(PROCESSED_EARTHQUAKES);
+                    logPointsToSpreadsheet(PROCESSED_EARTHQUAKES);
+                }
                 return PROCESSED_EARTHQUAKES;
 
             } catch (error) {
@@ -650,6 +662,69 @@
                 return [];
             } finally {
                 loadingElement.classList.add('hidden');
+            }
+        };
+
+        /**
+         * 地震データをGoogle Apps Scriptに送信してスプレッドシートに記録する
+         * @param {Array} earthquakes - 処理済みの地震情報配列
+         */
+        const logToSpreadsheet = async (earthquakes) => {
+            const url = CONFIG.GAS_WEB_APP_URL;
+            if (!url) {
+                console.log('GAS_WEB_APP_URLが設定されていないため、スプレッドシートへの記録をスキップしました。');
+                return;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors', // CORSエラーを回避するために必要
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(earthquakes)
+                });
+                console.log('スプレッドシートへの記録リクエストを送信しました。');
+            } catch (error) {
+                console.error('スプレッドシートへの記録中にエラーが発生しました:', error);
+            }
+        };
+
+        /**
+         * 観測点データをGoogle Apps Scriptに送信してスプレッドシートに記録する
+         * @param {Array} earthquakes - 処理済みの地震情報配列
+         */
+        const logPointsToSpreadsheet = async (earthquakes) => {
+            const url = CONFIG.GAS_POINTS_WEB_APP_URL;
+            if (!url) {
+                console.log('GAS_POINTS_WEB_APP_URLが設定されていないため、観測点情報の記録をスキップしました。');
+                return;
+            }
+
+            // 全ての地震から観測点データ（points）をフラットな配列に変換する
+            const allPoints = [];
+            earthquakes.forEach(eq => {
+                if (eq.rawPoints && Array.isArray(eq.rawPoints)) {
+                    eq.rawPoints.forEach(point => {
+                        // 各観測点データに、関連する地震IDを追加する
+                        allPoints.push({ ...point, earthquakeId: eq.id });
+                    });
+                }
+            });
+
+            if (allPoints.length === 0) return;
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(allPoints)
+                });
+                console.log('観測点情報のスプレッドシートへの記録リクエストを送信しました。');
+            } catch (error) {
+                console.error('観測点情報の記録中にエラーが発生しました:', error);
             }
         };
 
