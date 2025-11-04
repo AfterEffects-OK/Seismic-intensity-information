@@ -636,9 +636,11 @@
                 // eventidで重複するデータを排除し、最新（リストで最初に見つかったもの）を優先する
                 const uniqueEarthquakesMap = new Map();
                 filteredEarthquakes.forEach(eq => {
-                    const id = String(eq.issue?.eventid);
-                    if (id && !uniqueEarthquakesMap.has(id)) { 
-                        uniqueEarthquakesMap.set(id, eq);
+                    // eventidを優先し、なければ issue.id をキーとして使用する
+                    const key = String(eq.issue?.eventid || eq.issue?.id);
+                    // キーが存在し、かつまだマップに登録されていない場合のみ追加
+                    if (key && key !== 'null' && !uniqueEarthquakesMap.has(key)) { 
+                        uniqueEarthquakesMap.set(key, eq);
                     }
                 });
                 
@@ -734,7 +736,10 @@
          * @returns {Object} 処理後の整形済み地震情報
          */
         const processEarthquake = (earthquake, tsunamiDetailsMap) => {
-            const eventId = String(earthquake.issue.eventid);
+            // 地震イベントID(eventid)を主キーとする。
+            // 存在しない場合は、情報ID(id)で代替する。
+            const eventId = String(earthquake.issue.eventid || earthquake.issue.id);
+
             const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
 
             const getTsunamiInfo = (grade) => {
@@ -763,7 +768,7 @@
 
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
-                id: String(earthquake.issue.eventid), 
+                id: eventId,
                 time: formatDateTime(earthquake.issue.time),
                 epicenter: earthquake.earthquake.hypocenter.name || '不明',
                 depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
