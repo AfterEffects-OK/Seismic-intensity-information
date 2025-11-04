@@ -534,6 +534,20 @@
             return `${y}/${mo}/${d} ${h}:${m}:${s}`;
         };
 
+        /**
+         * 文字列からMD5ハッシュを生成する非同期関数
+         * @param {string} message - ハッシュ化する文字列
+         * @returns {Promise<string>} 16進数文字列のハッシュ
+         */
+        const digestMessage = async (message) => {
+            const msgUint8 = new TextEncoder().encode(message); // 文字列をUint8Arrayにエンコード
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // ハッシュを計算
+            const hashArray = Array.from(new Uint8Array(hashBuffer)); // バッファを配列に変換
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // 16進数文字列に変換
+            return hashHex;
+        };
+
+
 
         /**
          * 観測点名から市町村名（政令指定都市の区まで含む）を抽出する
@@ -633,22 +647,44 @@
                     eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
                 );
 
-                // eventidで重複するデータを排除し、最新（リストで最初に見つかったもの）を優先する
+                // 「イベントキー」を元に重複排除・集約
                 const uniqueEarthquakesMap = new Map();
-                filteredEarthquakes.forEach(eq => {
-                    // eventidを優先し、なければ issue.id をキーとして使用する
-                    const key = String(eq.issue?.eventid || eq.issue?.event_id || eq.issue?.id);
-                    // キーが存在し、かつまだマップに登録されていない場合のみ追加
-                    if (key && key !== 'null' && !uniqueEarthquakesMap.has(key)) { 
-                        uniqueEarthquakesMap.set(key, eq);
+                for (const eq of filteredEarthquakes) {
+                    // 発生時刻と震源地名から安定したイベントキーを生成
+                    const eventTime = eq.earthquake?.time; // ★基準を地震発生時刻に変更
+                    const epicenterName = eq.earthquake?.hypocenter?.name;
+
+                    // ID生成に必要な情報がなければスキップ
+                    if (!eventTime || !epicenterName) continue; 
+
+                    const eventKey = `${eventTime}_${epicenterName}`;
+
+                    if (uniqueEarthquakesMap.has(eventKey)) {
+                        // 既に同じ地震イベントが存在する場合、情報をマージする
+                        const existingEq = uniqueEarthquakesMap.get(eventKey);
+                        // ★★★ 観測点(points)データを持つ情報を優先するロジック ★★★
+                        if (!existingEq.points && eq.points) { // 既存にpointsがなく、新しい方にあれば
+                            uniqueEarthquakesMap.set(eventKey, eq); // 新しい情報で上書きする
+                        }
+                        // 震源情報がより詳細なら更新する（マグニチュードが不明から判明した場合など）
+                        if ((existingEq.earthquake.hypocenter.magnitude === -1 || existingEq.earthquake.hypocenter.magnitude === null) && (eq.earthquake.hypocenter.magnitude !== -1 && eq.earthquake.hypocenter.magnitude !== null)) {
+                            existingEq.earthquake.hypocenter = eq.earthquake.hypocenter;
+                        }
+                        // 最大震度が更新された場合
+                        if (eq.earthquake.maxScale > existingEq.earthquake.maxScale) {
+                            existingEq.earthquake.maxScale = eq.earthquake.maxScale;
+                        }
+                    } else {
+                        // 新しい地震イベントとして追加
+                        uniqueEarthquakesMap.set(eventKey, eq);
                     }
-                });
+                }
                 
                 const uniqueEarthquakes = Array.from(uniqueEarthquakesMap.values());
 
                 // 処理済みのデータセットをグローバル変数に格納
                 // ここでは描画モードに関わらず、全ての情報を保持
-                PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap));
+                PROCESSED_EARTHQUAKES = await Promise.all(uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap)));
 
                 // 新しい地震データをスプレッドシートに記録
                 if (PROCESSED_EARTHQUAKES.length > 0) {
@@ -696,38 +732,43 @@
          * 観測点データをGoogle Apps Scriptに送信してスプレッドシートに記録する
          * @param {Array} earthquakes - 処理済みの地震情報配列
          */
-        const logPointsToSpreadsheet = async (earthquakes) => {
+        const logPointsToSpreadsheet = (earthquakes) => {
             const url = CONFIG.GAS_POINTS_WEB_APP_URL;
-            if (!url) {
+            if (!url) { 
                 console.log('GAS_POINTS_WEB_APP_URLが設定されていないため、観測点情報の記録をスキップしました。');
                 return;
-            }
+            } 
 
-            // 全ての地震から観測点データ（points）をフラットな配列に変換する
-            const allPoints = [];
+            // 地震ごとに観測点データを分割して送信する
             earthquakes.forEach(eq => {
-                if (eq.rawPoints && Array.isArray(eq.rawPoints)) {
-                    eq.rawPoints.forEach(point => {
-                        // 各観測点データに、関連する地震IDを追加する
-                        allPoints.push({ ...point, earthquakeId: eq.id });
+                // 震度1以上の観測点のみを抽出
+                const allPoints = eq.points?.filter(p => p.scale >= 10) || [];
+
+                if (allPoints.length > 0) {
+                    // 震度階級の大きい順に並び替え、上位40件に制限
+                    const sortedAndLimitedPoints = allPoints
+                        .sort((a, b) => b.scale - a.scale)
+                        .slice(0, 40);
+
+                    // 各観測点データに、関連する地震IDを追加 
+                    const payload = sortedAndLimitedPoints.map(point => ({ ...point, earthquakeId: eq.id }));
+
+                    // 非同期で送信処理を実行（awaitしないことで、次の地震の処理をブロックしない）
+                    fetch(url, {
+                        method: 'POST',
+                        mode: 'no-cors', // CORSエラーを回避
+                        cache: 'no-cache',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(() => {
+                        console.log(`地震ID: ${eq.id} の観測点データ(${payload.length}件)の記録リクエストを送信しました。`);
+                    })
+                    .catch(error => {
+                        console.error(`地震ID: ${eq.id} の観測点データ記録中にエラーが発生しました:`, error);
                     });
                 }
             });
-
-            if (allPoints.length === 0) return;
-
-            try {
-                await fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(allPoints)
-                });
-                console.log('観測点情報のスプレッドシートへの記録リクエストを送信しました。');
-            } catch (error) {
-                console.error('観測点情報の記録中にエラーが発生しました:', error);
-            }
         };
 
         /**
@@ -735,11 +776,15 @@
          * @param {Object} earthquake - APIから取得した単一の地震情報オブジェクト
          * @returns {Object} 処理後の整形済み地震情報
          */
-        const processEarthquake = (earthquake, tsunamiDetailsMap) => {
-            // 地震イベントID(eventid)を主キーとする。
-            // 存在しない場合は、情報ID(id)で代替する。
-            const eventId = String(earthquake.issue.eventid || earthquake.issue.event_id || earthquake.issue.id);
+        const processEarthquake = async (earthquake, tsunamiDetailsMap) => {
+            // --- 安定したID生成ロジック ---
+            const eqData = earthquake.earthquake;
+            const idSource = `${eqData.time}_${eqData.hypocenter.name}`; // ★基準を地震発生時刻に変更
+            const syntheticId = await digestMessage(idSource);
+            // -------------------------
 
+            // API提供のeventidは津波情報の紐付けにのみ利用
+            const eventId = String(earthquake.issue?.eventid || earthquake.issue?.event_id);
             const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
 
             const getTsunamiInfo = (grade) => {
@@ -768,8 +813,8 @@
 
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
-                id: eventId,
-                time: formatDateTime(earthquake.issue.time),
+                id: syntheticId,
+                time: formatDateTime(earthquake.earthquake.time), // ★表示も地震発生時刻に変更
                 epicenter: earthquake.earthquake.hypocenter.name || '不明',
                 depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
                 magnitude: magnitudeDisplay,
@@ -779,7 +824,7 @@
                 maxShindoLabel: scaleToShindo(earthquake.earthquake.maxScale).label,
                 maxShindoClass: scaleToShindo(earthquake.earthquake.maxScale).class,
                 maxScale: earthquake.earthquake.maxScale, // 最大震度を数値で保持
-                rawPoints: earthquake.points, // 生の観測点データを保持
+                points: earthquake.points, // 生の観測点データを保持
             };
         };
 
@@ -882,7 +927,7 @@
             const detailContainer = document.getElementById('detail-content');
             
             // データ存在の防御的チェック
-            if (!eq || !eq.rawPoints) {
+            if (!eq || !eq.points) {
                  // ダークモード対応: text-gray-500 -> text-gray-400
                  detailContainer.innerHTML = `
                     <div class="text-center p-8 text-gray-400">
@@ -890,14 +935,14 @@
                         <p>この地震の詳細データは読み込めませんでした。リストから再度選択してください。</p>
                     </div>
                 `;
-                console.error('Error: Earthquake data or rawPoints is missing.', eq);
+                console.error('Error: Earthquake data or points is missing.', eq);
                 // 固定バーもクリア
                 updateFixedShindoBar(null);
                 return;
             }
 
             // 現在のDISPLAY_MODEに基づいてデータをグループ化
-            const shindoByMode = groupPointsByShindoAndMode(eq.rawPoints, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
+            const shindoByMode = groupPointsByShindoAndMode(eq.points, DISPLAY_MODE, CONFIG.MIN_DETAIL_SCALE);
 
             // 詳細セクションの震度別リストを生成
             const detailList = shindoByMode.map(item => `
@@ -1107,7 +1152,7 @@
         const updateFixedShindoBar = (eq) => {
             const shindoNav = document.getElementById('shindo-nav');
 
-            if (!eq || !eq.rawPoints) {
+            if (!eq || !eq.points) {
                 // 初期状態 / データなし
                 FIXED_BAR_VIEWS = [];
                 shindoNav.style.display = 'none';
@@ -1117,7 +1162,7 @@
             }
             
             const contentLine1 = document.getElementById('content-line-1');
-            const shindoGroups = groupPointsByShindoAndMode(eq.rawPoints, 'municipality', loopPlaybackMinScale);
+            const shindoGroups = groupPointsByShindoAndMode(eq.points, 'municipality', loopPlaybackMinScale);
             FIXED_BAR_VIEWS = []; 
 
             // --- 1. 概況ページの生成 (動的ページ分割) ---
