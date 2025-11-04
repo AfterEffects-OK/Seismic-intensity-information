@@ -1030,9 +1030,9 @@
                 </div>
 
                 <!-- ダークモード対応: text-gray-700 -> text-gray-200 -->
-                <h4 class="text-lg font-bold text-gray-200 mb-3">震度別観測地点 (${modeLabel} / 震度3以上)</h4>
+                <h4 class="text-lg font-bold text-gray-200 mb-3">震度別観測地点 (${modeLabel})</h4>
                 <!-- ダークモード対応: text-gray-500 -> text-gray-400 -->
-                ${shindoByMode.length > 0 ? detailList : '<p class="text-sm text-gray-400">震度3以上の観測データがありません。</p>'}
+                ${shindoByMode.length > 0 ? detailList : '<p class="text-sm text-gray-400">観測データがありません。</p>'}
             `;
 
             detailContainer.innerHTML = html;
