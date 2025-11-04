@@ -1061,7 +1061,7 @@
 
             // 2. 震源の深さとマグニチュード (マグニチュードが不明でない場合のみ)
             if (eq.magnitude !== '不明') {
-                const depthText = eq.depth === 0 ? 'ごく浅い　' : (eq.depth > 0 ? `およそ${eq.depth}km　` : '不明');
+                const depthText = eq.depth === 0 ? ' ごく浅い　' : (eq.depth > 0 ? `およそ${eq.depth}km　` : '不明');
                 const magnitudeText = `地震の規模は マグニチュード${eq.magnitude}`;
                 summaryTexts.push(`震源の深さは${depthText}${magnitudeText}`);
             }
