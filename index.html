@@ -534,6 +534,21 @@
             return `${y}/${mo}/${d} ${h}:${m}:${s}`;
         };
 
+        /**
+         * 文字列からMD5ハッシュを生成する非同期関数
+         * @param {string} message - ハッシュ化する文字列
+         * @returns {Promise<string>} 16進数文字列のハッシュ
+         */
+        const digestMessage = async (message) => {
+            const msgUint8 = new TextEncoder().encode(message); // 文字列をUint8Arrayにエンコード
+            const hashBuffer = await crypto.subtle.digest('MD5', msgUint8); // ハッシュを計算
+            const hashArray = Array.from(new Uint8Array(hashBuffer)); // バッファを配列に変換
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // 16進数文字列に変換
+            return hashHex;
+        };
+
+
+
 
         /**
          * 観測点名から市町村名（政令指定都市の区まで含む）を抽出する
@@ -590,95 +605,64 @@
             errorElement.classList.add('hidden');
             
             try {
-                // 震度情報(551)と津波情報(552)を別々にリクエスト
-                const url551 = `${CONFIG.API_URL}&codes=551`;
-                const url552 = `${CONFIG.API_URL}&codes=552`;
+                // APIからまとめてデータを取得
+                const response = await fetch(`${CONFIG.API_URL}&codes=551,552,556`);
 
-                const [response551, response552] = await Promise.all([
-                    fetch(url551),
-                    fetch(url552)
-                ]);
-
-                if (!response551.ok) {
-                    throw new Error(`HTTPエラー (震度情報): ${response551.status}`);
-                }
-                if (!response552.ok) {
-                    throw new Error(`HTTPエラー (津波情報): ${response552.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
                 }
                 
-                const data551 = await response551.json();
-                const data552 = await response552.json();
-                const data = [...data551, ...data552];
+                const data = await response.json();
 
-                // --- 1. 津波情報(552)を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
+                // --- 1. 津波情報を先に処理し、event_idごとに最高の警報レベルをマップに保存 ---
                 const tsunamiDetailsMap = new Map();
-                const tsunamiInfos = data.filter(d => d.code === 552);
-
-                tsunamiInfos.forEach(info => { // 552: 津波情報
-                    const eventId = info.issue?.event_id;
+                data.filter(d => d.code === 552).forEach(info => {
+                    const eventId = info.issue?.event_id || info.issue?.eventid;
                     if (!eventId || !info.tsunami?.forecasts) return;
 
-                    const grades = info.tsunami.forecasts.map(f => f.grade); // ["Warning", "Advisory"]
+                    const grades = info.tsunami.forecasts.map(f => f.grade);
                     let highestGrade = 'None';
                     if (grades.includes('MajorWarning')) highestGrade = 'MajorWarning';
                     else if (grades.includes('Warning')) highestGrade = 'Warning';
                     else if (grades.includes('Advisory')) highestGrade = 'Advisory';
 
-                    // 既に登録されている情報より高いレベルの警報があれば更新
                     tsunamiDetailsMap.set(String(eventId), highestGrade);
                 });
 
-                // 最大震度3以上の地震のみをフィルタリング (CONFIG.MIN_LIST_SCALEを使用)
+                // --- 2. 地震情報を「イベントキー」を元に重複排除・集約 ---
                 const filteredEarthquakes = data.filter(eq => 
-                    eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
+                    (eq.code === 551 || eq.code === 556) && eq.earthquake && eq.earthquake.maxScale >= CONFIG.MIN_LIST_SCALE
                 );
 
-                const eventMap = new Map();
-                const noEventIdList = [];
+                const earthquakeMap = new Map();
+                for (const eq of filteredEarthquakes) {
+                    // 発生時刻と震源地名から安定したイベントキーを生成
+                    const eventKey = `${eq.earthquake.time}_${eq.earthquake.hypocenter.name}`;
 
-                // 2-1. eventid を持つものを優先的にマップに格納
-                filteredEarthquakes.forEach(eq => {
-                    const eventId = eq.issue?.eventid || eq.issue?.event_id;
-                    if (eventId) {
-                        const key = String(eventId);
-                        // 常に新しい情報で上書きする（APIレスポンスは新しい順なので、これで最新になる）
-                        eventMap.set(key, eq);
-                    } else {
-                        noEventIdList.push(eq);
-                    }
-                });
-
-                // 2-2. eventid を持たない情報を、時刻と震源地が一致する既存のイベントに紐付ける
-                noEventIdList.forEach(orphanEq => {
-                    const orphanTime = orphanEq.issue?.time;
-                    const orphanEpicenter = orphanEq.earthquake?.hypocenter?.name;
-
-                    // 既存のイベントと時刻・震源地が一致するか探す
-                    const parentEventEntry = Array.from(eventMap.entries()).find(([key, parentEq]) => 
-                        parentEq.issue?.time === orphanTime && parentEq.earthquake?.hypocenter?.name === orphanEpicenter
-                    );
-
-                    if (parentEventEntry) {
-                        const [parentKey, parentEq] = parentEventEntry;
-                        // 観測点(points)情報がなければ統合する
-                        if (!parentEq.points && orphanEq.points) {
-                            parentEq.points = orphanEq.points;
-                            eventMap.set(parentKey, parentEq); // マップの情報を更新
+                    if (earthquakeMap.has(eventKey)) {
+                        // 既に同じ地震イベントが存在する場合、情報をマージする
+                        const existingEq = earthquakeMap.get(eventKey);
+                        // 観測点(points)情報がなければ新しい情報で上書きする
+                        if (!existingEq.points && eq.points) {
+                            existingEq.points = eq.points;
+                        }
+                        // 震源情報がより詳細なら更新する（マグニチュードが不明から判明した場合など）
+                        if ((existingEq.earthquake.hypocenter.magnitude === -1 || existingEq.earthquake.hypocenter.magnitude === null) && (eq.earthquake.hypocenter.magnitude !== -1 && eq.earthquake.hypocenter.magnitude !== null)) {
+                            existingEq.earthquake.hypocenter = eq.earthquake.hypocenter;
+                        }
+                        // 最大震度が更新された場合
+                        if (eq.earthquake.maxScale > existingEq.earthquake.maxScale) {
+                            existingEq.earthquake.maxScale = eq.earthquake.maxScale;
                         }
                     } else {
-                        // 紐付け先が見つからない場合は、issue.idをキーとして独立した地震として追加
-                        const key = String(orphanEq.issue?.id);
-                        if (key && !eventMap.has(key)) {
-                            eventMap.set(key, orphanEq);
-                        }
+                        // 新しい地震イベントとして追加
+                        earthquakeMap.set(eventKey, eq);
                     }
-                });
-                
-                const uniqueEarthquakes = Array.from(eventMap.values());
+                }
+                const uniqueEarthquakes = Array.from(earthquakeMap.values());
 
                 // 処理済みのデータセットをグローバル変数に格納
-                // ここでは描画モードに関わらず、全ての情報を保持
-                PROCESSED_EARTHQUAKES = uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap));
+                PROCESSED_EARTHQUAKES = await Promise.all(uniqueEarthquakes.map(eq => processEarthquake(eq, tsunamiDetailsMap)));
 
                 // 新しい地震データをスプレッドシートに記録
                 if (PROCESSED_EARTHQUAKES.length > 0) {
@@ -767,7 +751,6 @@
          */
         const processEarthquake = (earthquake, tsunamiDetailsMap) => {
             // 地震イベントID(eventid)を主キーとする。
-            // 存在しない場合は、情報ID(id)で代替する。
             const eventId = String(earthquake.issue?.eventid || earthquake.issue?.event_id || earthquake.issue?.id);
 
             const detailedTsunamiGrade = tsunamiDetailsMap.get(eventId) || earthquake.earthquake.domesticTsunami;
@@ -798,7 +781,7 @@
 
             // 必要な情報を整形して返す。pointsデータはrawPointsとして保存し、描画時に処理する
             return {
-                id: eventId,
+                id: syntheticId,
                 time: formatDateTime(earthquake.issue.time),
                 epicenter: earthquake.earthquake.hypocenter.name || '不明',
                 depth: earthquake.earthquake.hypocenter.depth, // 震源の深さを追加
@@ -1137,7 +1120,7 @@
         const updateFixedShindoBar = (eq) => {
             const shindoNav = document.getElementById('shindo-nav');
 
-            if (!eq || !eq.points) {
+            if (!eq || !eq.rawPoints) {
                 // 初期状態 / データなし
                 FIXED_BAR_VIEWS = [];
                 shindoNav.style.display = 'none';
